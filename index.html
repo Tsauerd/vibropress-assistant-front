@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="VibroPress AI — интеллектуальный помощник для производства вибропрессованных бетонных изделий">
+    <title>VibroPress AI — Умный помощник по вибропрессованию</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">VibroPress AI</div>
+            <ul class="nav-menu">
+                <li><a href="#demo" class="nav-link">Демо</a></li>
+                <li><a href="#features" class="nav-link">Возможности</a></li>
+                <li><a href="#how" class="nav-link">Как работает</a></li>
+                <li><a href="#for-whom" class="nav-link">Для кого</a></li>
+                <li><a href="#bot" class="btn-primary-small">Открыть бота</a></li>
+            </ul>
+            <button class="mobile-menu-toggle" aria-label="Меню">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">VibroPress AI</h1>
+                <p class="hero-subtitle">Интеллектуальный помощник для производства вибропрессованных бетонных изделий. Мгновенный поиск по ГОСТам, мануалам и техническим решениям.</p>
+                <div class="hero-buttons">
+                    <a href="#demo" class="btn-primary">Попробовать демо</a>
+                    <a href="#how" class="btn-secondary">Как это работает</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Demo Section -->
+    <section id="demo" class="demo-section">
+        <div class="container">
+            <h2 class="section-title">Попробуйте прямо сейчас</h2>
+            <p class="demo-subtitle">Выберите режим работы и задайте свой вопрос</p>
+            
+            <!-- Mode Switcher -->
+            <div class="mode-switcher">
+                <button class="mode-btn active" data-mode="gost">
+                    <span class="mode-icon">📋</span>
+                    <span class="mode-name">ГОСТ/СП</span>
+                </button>
+                <button class="mode-btn" data-mode="equipment">
+                    <span class="mode-icon">⚙️</span>
+                    <span class="mode-name">Оборудование</span>
+                </button>
+                <button class="mode-btn" data-mode="defects">
+                    <span class="mode-icon">🔍</span>
+                    <span class="mode-name">Претензии</span>
+                </button>
+                <button class="mode-btn" data-mode="recipes">
+                    <span class="mode-icon">🧪</span>
+                    <span class="mode-name">Рецептуры</span>
+                </button>
+            </div>
+
+            <!-- Chat Interface -->
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div class="chat-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Режим: <span id="current-mode">ГОСТ/СП</span></span>
+                    </div>
+                </div>
+                
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message bot-message">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">
+                            <p>Здравствуйте! Я VibroPress AI.</p>
+                            <p>Выберите режим работы и задайте вопрос. Я помогу найти информацию в базе знаний.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-wrapper">
+                    <div class="example-questions" id="example-questions">
+                        <!-- Examples will be inserted by JS -->
+                    </div>
+                    <div class="chat-input-container">
+                        <textarea 
+                            class="chat-input" 
+                            id="chat-input" 
+                            placeholder="Введите ваш вопрос..."
+                            rows="1"
+                        ></textarea>
+                        <button class="send-btn" id="send-btn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Что умеет бот</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3 class="feature-title">Поиск по нормативке (ГОСТ/СП)</h3>
+                    <p class="feature-description">Быстро находит требования, пункты и таблицы.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚙️</div>
+                    <h3 class="feature-title">Поиск по мануалам оборудования</h3>
+                    <p class="feature-description">Отвечает по настройкам, режимам, диагностике и типовым ошибкам.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3 class="feature-title">Ответы на претензии/дефекты</h3>
+                    <p class="feature-description">Разбор причины + ссылка на нормы/испытания + черновик ответа клиенту.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🧪</div>
+                    <h3 class="feature-title">ИИ-рекомендации по составу и режимам</h3>
+                    <p class="feature-description">Подбор смеси/В/Ц/добавок/вибро-режима под цель (прочность, мороз, истираемость, цвет).</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how" class="how-it-works">
+        <div class="container">
+            <h2 class="section-title">Как работает</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">Загрузили базу</h3>
+                    <p class="step-description">ГОСТы, СП, мануалы оборудования и техническую документацию обработали и индексировали</p>
+                </div>
+                
+                <div class="step-arrow">→</div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">Задали вопрос</h3>
+                    <p class="step-description">Вы пишете на естественном языке — бот понимает контекст и находит релевантную информацию</p>
+                </div>
+                
+                <div class="step-arrow">→</div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3 class="step-title">Получили ответ</h3>
+                    <p class="step-description">Готовое решение со ссылками на источники, номерами пунктов и таблицами</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- For Whom Section -->
+    <section id="for-whom" class="for-whom">
+        <div class="container">
+            <h2 class="section-title">Для кого</h2>
+            <div class="badges">
+                <div class="badge">
+                    <span class="badge-icon">🏭</span>
+                    <span class="badge-text">Производство</span>
+                </div>
+                <div class="badge">
+                    <span class="badge-icon">🔬</span>
+                    <span class="badge-text">Лаборатория</span>
+                </div>
+                <div class="badge">
+                    <span class="badge-icon">🛠️</span>
+                    <span class="badge-text">Техподдержка</span>
+                </div>
+                <div class="badge">
+                    <span class="badge-icon">📐</span>
+                    <span class="badge-text">Проектировщики</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <h2 class="cta-title">Попробовать прямо сейчас</h2>
+            <p class="cta-subtitle">Начните работу с VibroPress AI и получите мгновенные ответы на технические вопросы</p>
+            <a href="#bot" class="btn-primary">Открыть бота</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="footer-text">VibroPress AI — MVP версия</p>
+            <p class="footer-text">Обратная связь: <a href="https://t.me/yourusername" class="footer-link">Telegram</a> • <a href="mailto:contact@example.com" class="footer-link">Email</a></p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+/* =============================================================================
+   ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ API ИНТЕГРАЦИИ
+   Добавь эти стили в конец твоего styles.css файла
+   ============================================================================= */
+
+/* Источники информации */
+.sources {
+    margin-top: 15px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #3b82f6;
+}
+
+.sources h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.source-item {
+    margin-bottom: 12px;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.source-item:last-child {
+    margin-bottom: 0;
+}
+
+.source-item strong {
+    color: #3b82f6;
+    font-size: 14px;
+}
+
+.source-item span {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.source-item p {
+    margin: 8px 0 0 0;
+    color: #4b5563;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Теги сущностей (ГОСТы, марки и т.д.) */
+.entities {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.entity-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #3b82f6;
+    color: white;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* Метаданные сообщения (модель, претензия) */
+.message-meta {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.complaint-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: #fef2f2;
+    color: #dc2626;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #fee2e2;
+}
+
+.model-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: #f3f4f6;
+    color: #6b7280;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Индикатор статуса API */
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #10b981; /* Green = connected */
+    margin-right: 8px;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Состояние загрузки для кнопки отправки */
+.send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #9ca3af;
+}
+
+/* Состояние disabled для input */
+.chat-input:disabled {
+    background-color: #f9fafb;
+    cursor: not-allowed;
+}
+
+/* Улучшенная типографика для длинных ответов */
+.message-content p {
+    margin-bottom: 12px;
+    line-height: 1.6;
+}
+
+.message-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .sources {
+        padding: 10px;
+    }
+    
+    .source-item {
+        padding: 8px;
+    }
+    
+    .entity-tag {
+        font-size: 10px;
+        padding: 2px 8px;
+    }
+    
+    .message-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+}
