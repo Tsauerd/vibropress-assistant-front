@@ -2,11 +2,10 @@
 // API CONFIGURATION
 // =============================================================================
 
-// Определяем URL API в зависимости от окружения
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:8000'
-    : 'https://vibropress-assistant-backend.onrender.com';  // ✅ ПРАВИЛЬНО
-    
+    : 'https://vibropress-assistant-backend.onrender.com';  // ✅ ИСПРАВЛЕННЫЙ URL
+
 console.log('🔗 API URL:', API_URL);
 
 // =============================================================================
@@ -43,33 +42,20 @@ const modeNames = {
     recipes: "Рецептуры"
 };
 
-// Переменная для хранения истории сообщений
 let conversationHistory = [];
 
 // Mode switching
 document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-        // Remove active class from all buttons
         document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-        
-        // Add active class to clicked button
         this.classList.add('active');
-        
-        // Get mode
         const mode = this.dataset.mode;
-        
-        // Update status text
         document.getElementById('current-mode').textContent = modeNames[mode];
-        
-        // Update example questions
         updateExampleQuestions(mode);
-        
-        // Add bot message about mode change
         addBotMessage(`Режим изменён на "${modeNames[mode]}". Можете задать вопрос!`);
     });
 });
 
-// Update example questions
 function updateExampleQuestions(mode) {
     const container = document.getElementById('example-questions');
     container.innerHTML = '';
@@ -86,7 +72,6 @@ function updateExampleQuestions(mode) {
     });
 }
 
-// Initialize with GOST mode examples
 updateExampleQuestions('gost');
 
 // Chat input auto-resize
@@ -96,7 +81,6 @@ chatInput.addEventListener('input', function() {
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
 });
 
-// Send message
 const sendBtn = document.getElementById('send-btn');
 const chatMessages = document.getElementById('chat-messages');
 
@@ -113,60 +97,198 @@ function addUserMessage(text) {
     scrollToBottom();
 }
 
+// =============================================================================
+// УЛУЧШЕННОЕ ФОРМАТИРОВАНИЕ ИСТОЧНИКОВ
+// =============================================================================
+
+function formatSourceName(title) {
+    // Убираем расширения файлов
+    return title.replace(/\.(pdf|PDF|docx|DOCX|txt|TXT)$/i, '');
+}
+
+function getSourceIcon(type) {
+    const icons = {
+        'gost': '📋',
+        'manual': '⚙️',
+        'presentation': '📊',
+        'book': '📚',
+        'other': '📄'
+    };
+    return icons[type] || '📄';
+}
+
+function extractGOSTInfo(title, section) {
+    // Извлекает номер ГОСТа и другую метаинформацию
+    const gostMatch = title.match(/(ГОСТ|СП|СНиП)[\s_-]*(\d+[\.\-]\d+)/i);
+    if (gostMatch) {
+        return {
+            type: gostMatch[1].toUpperCase(),
+            number: gostMatch[2],
+            isGOST: true
+        };
+    }
+    return { isGOST: false };
+}
+
+function extractPageInfo(contentPreview) {
+    // Пытается извлечь номера страниц из текста
+    const pageMatch = contentPreview.match(/стр\.?\s*(\d+)|страниц[аы]\s*(\d+)|page\s*(\d+)/i);
+    if (pageMatch) {
+        return pageMatch[1] || pageMatch[2] || pageMatch[3];
+    }
+    return null;
+}
+
+function createCompactSource(source) {
+    const formattedName = formatSourceName(source.title);
+    const gostInfo = extractGOSTInfo(source.title, source.section);
+    const icon = getSourceIcon(source.type);
+    const pageInfo = extractPageInfo(source.content_preview);
+    
+    const sourceDiv = document.createElement('div');
+    sourceDiv.className = 'source-item';
+    
+    // Иконка
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'source-icon';
+    iconSpan.textContent = icon;
+    
+    // Информация об источнике
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'source-info';
+    
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'source-title';
+    titleDiv.textContent = formattedName;
+    
+    const metaDiv = document.createElement('div');
+    metaDiv.className = 'source-meta';
+    
+    // Для ГОСТов показываем больше деталей
+    if (gostInfo.isGOST) {
+        const gostSpan = document.createElement('span');
+        gostSpan.textContent = `${gostInfo.type} ${gostInfo.number}`;
+        metaDiv.appendChild(gostSpan);
+    }
+    
+    // Раздел
+    if (source.section) {
+        const sectionSpan = document.createElement('span');
+        sectionSpan.textContent = source.section.substring(0, 40) + (source.section.length > 40 ? '...' : '');
+        metaDiv.appendChild(sectionSpan);
+    }
+    
+    // Страница (если есть)
+    if (pageInfo) {
+        const pageSpan = document.createElement('span');
+        pageSpan.textContent = `стр. ${pageInfo}`;
+        metaDiv.appendChild(pageSpan);
+    }
+    
+    // Превью (скрыто по умолчанию)
+    const previewDiv = document.createElement('div');
+    previewDiv.className = 'source-preview';
+    previewDiv.textContent = source.content_preview;
+    
+    // Теги сущностей
+    if (source.entities && source.entities.length > 0) {
+        const entitiesDiv = document.createElement('div');
+        entitiesDiv.className = 'entities';
+        source.entities.slice(0, 5).forEach(entity => {
+            const tag = document.createElement('span');
+            tag.className = 'entity-tag';
+            tag.textContent = entity;
+            entitiesDiv.appendChild(tag);
+        });
+        previewDiv.appendChild(entitiesDiv);
+    }
+    
+    // Кнопка раскрытия
+    const expandBtn = document.createElement('button');
+    expandBtn.className = 'source-expand-btn';
+    expandBtn.setAttribute('aria-label', 'Показать детали');
+    expandBtn.addEventListener('click', () => {
+        sourceDiv.classList.toggle('expanded');
+    });
+    
+    infoDiv.appendChild(titleDiv);
+    infoDiv.appendChild(metaDiv);
+    infoDiv.appendChild(previewDiv);
+    
+    sourceDiv.appendChild(iconSpan);
+    sourceDiv.appendChild(infoDiv);
+    sourceDiv.appendChild(expandBtn);
+    
+    return sourceDiv;
+}
+
+// =============================================================================
+// ФОРМАТИРОВАНИЕ ОТВЕТА С ПОДДЕРЖКОЙ ФОРМУЛ
+// =============================================================================
+
+function formatResponseText(text) {
+    // Форматирует текст: выделяет числа, температуры, размеры
+    
+    // Температуры: 1000°C, 1200°C
+    text = text.replace(/(\d+)°C/g, '<code>$1°C</code>');
+    
+    // Размеры: 2,50mm, 3.5мм
+    text = text.replace(/(\d+[,.]?\d*)\s?(mm|мм|м|см|km|км)/gi, '<code>$1$2</code>');
+    
+    // Давления, прочности: B25, F200, M300
+    text = text.replace(/\b([BMFР])(\d+)\b/g, '<code>$1$2</code>');
+    
+    // Химические формулы и специальные обозначения
+    // Например: H2O, CO2
+    text = text.replace(/\b([A-Z][a-z]?\d+)\b/g, '<code>$1</code>');
+    
+    return text;
+}
+
 function addBotMessage(text, sources = null, modelUsed = null, isComplaint = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message bot-message';
     
-    // Основной контент сообщения
+    // Форматируем текст ответа
+    const formattedText = formatResponseText(escapeHtml(text));
+    
     let messageHTML = `
         <div class="message-avatar">🤖</div>
         <div class="message-content">
-            <p>${escapeHtml(text)}</p>
+            <p>${formattedText}</p>
     `;
     
-    // Если это претензия - показываем бейдж
-    if (isComplaint) {
-        messageHTML += `
-            <div class="message-meta">
-                <span class="complaint-badge">⚠️ Претензия</span>
-                <span class="model-badge">Модель: ${modelUsed || 'GPT-4o'}</span>
-            </div>
-        `;
-    } else if (modelUsed) {
-        messageHTML += `
-            <div class="message-meta">
-                <span class="model-badge">Модель: ${modelUsed}</span>
-            </div>
-        `;
-    }
-    
-    // Если есть источники - добавляем их
-    if (sources && sources.length > 0) {
-        messageHTML += `
-            <div class="sources">
-                <h4>📚 Источники:</h4>
-        `;
-        
-        sources.forEach(source => {
-            messageHTML += `
-                <div class="source-item">
-                    <strong>${escapeHtml(source.title)}</strong>
-                    ${source.section ? `<span> - ${escapeHtml(source.section)}</span>` : ''}
-                    <p>${escapeHtml(source.content_preview)}</p>
-                    ${source.entities && source.entities.length > 0 ? `
-                        <div class="entities">
-                            ${source.entities.map(entity => `<span class="entity-tag">${escapeHtml(entity)}</span>`).join('')}
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        });
-        
+    // Метаданные (модель, претензия)
+    if (isComplaint || modelUsed) {
+        messageHTML += `<div class="message-meta">`;
+        if (isComplaint) {
+            messageHTML += `<span class="complaint-badge">⚠️ Претензия</span>`;
+        }
+        if (modelUsed) {
+            messageHTML += `<span class="model-badge">Модель: ${modelUsed}</span>`;
+        }
         messageHTML += `</div>`;
     }
     
     messageHTML += `</div>`;
     messageDiv.innerHTML = messageHTML;
+    
+    // Добавляем источники (компактный формат)
+    if (sources && sources.length > 0) {
+        const sourcesContainer = document.createElement('div');
+        sourcesContainer.className = 'sources';
+        
+        const sourcesTitle = document.createElement('h4');
+        sourcesTitle.textContent = '📚 Источники';
+        sourcesContainer.appendChild(sourcesTitle);
+        
+        sources.forEach(source => {
+            sourcesContainer.appendChild(createCompactSource(source));
+        });
+        
+        messageDiv.querySelector('.message-content').appendChild(sourcesContainer);
+    }
+    
     chatMessages.appendChild(messageDiv);
     scrollToBottom();
 }
@@ -210,7 +332,6 @@ function escapeHtml(text) {
 
 async function callAPI(userMessage) {
     try {
-        // Добавляем сообщение пользователя в историю
         conversationHistory.push({
             role: 'user',
             content: userMessage
@@ -237,7 +358,6 @@ async function callAPI(userMessage) {
         const data = await response.json();
         console.log('📥 Получен ответ от API:', data);
         
-        // Добавляем ответ ассистента в историю
         conversationHistory.push({
             role: 'assistant',
             content: data.response
@@ -248,7 +368,6 @@ async function callAPI(userMessage) {
     } catch (error) {
         console.error('❌ Ошибка при вызове API:', error);
         
-        // Если API недоступен - показываем демо-ответ
         return {
             response: `⚠️ Не удалось подключиться к API. Ошибка: ${error.message}\n\nЭто может быть связано с:\n1. API ещё не задеплоен на Render\n2. Cold start (первый запрос после простоя занимает ~30-60 сек)\n3. Проблемы с сетью\n\nПопробуйте ещё раз через минуту.`,
             sources: null,
@@ -259,35 +378,28 @@ async function callAPI(userMessage) {
 }
 
 // =============================================================================
-// SEND MESSAGE FUNCTION (с реальным API)
+// SEND MESSAGE FUNCTION
 // =============================================================================
 
 async function sendMessage() {
     const text = chatInput.value.trim();
     if (!text) return;
     
-    // Disable input and button during request
     chatInput.disabled = true;
     sendBtn.disabled = true;
     
-    // Add user message
     addUserMessage(text);
     
-    // Clear input
     chatInput.value = '';
     chatInput.style.height = 'auto';
     
-    // Show typing indicator
     showTypingIndicator();
     
     try {
-        // Call real API
         const apiResponse = await callAPI(text);
         
-        // Remove typing indicator
         removeTypingIndicator();
         
-        // Add bot response with sources
         addBotMessage(
             apiResponse.response,
             apiResponse.sources,
@@ -300,7 +412,6 @@ async function sendMessage() {
         removeTypingIndicator();
         addBotMessage('Извините, произошла ошибка. Пожалуйста, попробуйте ещё раз.');
     } finally {
-        // Re-enable input and button
         chatInput.disabled = false;
         sendBtn.disabled = false;
         chatInput.focus();
@@ -331,10 +442,9 @@ async function checkAPIStatus() {
             const data = await response.json();
             console.log('✅ API доступен:', data);
             
-            // Можно показать статус в UI
             const statusDot = document.querySelector('.status-dot');
             if (statusDot) {
-                statusDot.style.backgroundColor = '#10b981'; // Green
+                statusDot.style.backgroundColor = '#10b981';
                 statusDot.title = 'API подключен';
             }
         } else {
@@ -343,32 +453,28 @@ async function checkAPIStatus() {
     } catch (error) {
         console.warn('⚠️ API недоступен (возможно, холодный старт):', error.message);
         
-        // Показываем предупреждение
         const statusDot = document.querySelector('.status-dot');
         if (statusDot) {
-            statusDot.style.backgroundColor = '#f59e0b'; // Orange
+            statusDot.style.backgroundColor = '#f59e0b';
             statusDot.title = 'API недоступен (холодный старт)';
         }
     }
 }
 
-// Проверяем статус API при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     checkAPIStatus();
 });
 
 // =============================================================================
-// SMOOTH SCROLLING & NAVIGATION
+// NAVIGATION & UI
 // =============================================================================
 
-// Smooth scrolling for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
         
         const targetId = this.getAttribute('href');
         if (targetId === '#bot') {
-            // Scroll to demo section instead
             const demoSection = document.querySelector('#demo');
             if (demoSection) {
                 const navbarHeight = document.querySelector('.navbar').offsetHeight;
@@ -395,7 +501,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Mobile menu toggle
 const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
 const navMenu = document.querySelector('.nav-menu');
 
@@ -403,7 +508,6 @@ if (mobileMenuToggle) {
     mobileMenuToggle.addEventListener('click', () => {
         navMenu.classList.toggle('active');
         
-        // Animate hamburger icon
         const spans = mobileMenuToggle.querySelectorAll('span');
         if (navMenu.classList.contains('active')) {
             spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
@@ -416,7 +520,6 @@ if (mobileMenuToggle) {
         }
     });
     
-    // Close mobile menu when clicking on a link
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', () => {
             navMenu.classList.remove('active');
@@ -428,7 +531,6 @@ if (mobileMenuToggle) {
     });
 }
 
-// Active navigation highlighting on scroll
 const sections = document.querySelectorAll('section[id]');
 const navLinks = document.querySelectorAll('.nav-link');
 
@@ -451,7 +553,6 @@ function highlightNavigation() {
     });
 }
 
-// Throttle scroll event for better performance
 let scrollTimeout;
 window.addEventListener('scroll', () => {
     if (scrollTimeout) {
@@ -463,7 +564,6 @@ window.addEventListener('scroll', () => {
     });
 });
 
-// Intersection Observer for fade-in animations
 const observerOptions = {
     threshold: 0.1,
     rootMargin: '0px 0px -50px 0px'
@@ -478,7 +578,6 @@ const observer = new IntersectionObserver((entries) => {
     });
 }, observerOptions);
 
-// Observe elements for animation
 document.addEventListener('DOMContentLoaded', () => {
     const animatedElements = document.querySelectorAll('.feature-card, .step, .badge');
     
@@ -490,7 +589,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Add hover effect to feature cards
 document.querySelectorAll('.feature-card').forEach(card => {
     card.addEventListener('mouseenter', function() {
         this.style.borderColor = getComputedStyle(document.documentElement)

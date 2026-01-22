@@ -771,3 +771,298 @@ body {
         font-size: 0.9rem;
     }
 }
+
+/* =============================================================================
+   УЛУЧШЕННОЕ ОФОРМЛЕНИЕ ОТВЕТОВ И ИСТОЧНИКОВ
+   Добавь эти стили в конец styles.css
+   ============================================================================= */
+
+/* Улучшенное оформление сообщений бота */
+.bot-message .message-content {
+    background: linear-gradient(to bottom, #f8f9fa, #ffffff);
+    border-left: 4px solid #3b82f6;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.bot-message .message-content p {
+    color: #1f2937;
+    font-size: 15px;
+    line-height: 1.8;
+    margin-bottom: 16px;
+}
+
+.bot-message .message-content p:last-of-type {
+    margin-bottom: 0;
+}
+
+/* Нумерованные списки в ответах */
+.bot-message .message-content ol {
+    margin: 12px 0;
+    padding-left: 24px;
+}
+
+.bot-message .message-content ol li {
+    margin: 8px 0;
+    line-height: 1.7;
+}
+
+.bot-message .message-content ol li strong {
+    color: #3b82f6;
+    font-weight: 600;
+}
+
+/* Маркированные списки */
+.bot-message .message-content ul {
+    margin: 12px 0;
+    padding-left: 24px;
+    list-style-type: disc;
+}
+
+.bot-message .message-content ul li {
+    margin: 6px 0;
+    line-height: 1.6;
+}
+
+/* Выделение технических терминов */
+.bot-message .message-content strong {
+    color: #1e40af;
+    font-weight: 600;
+}
+
+/* Выделение температур, размеров, параметров */
+.bot-message .message-content code {
+    background: #e0e7ff;
+    color: #1e40af;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 14px;
+}
+
+/* Компактные источники (только название и страницы) */
+.sources {
+    margin-top: 20px;
+    padding: 16px;
+    background: #f3f4f6;
+    border-radius: 10px;
+    border-left: 3px solid #10b981;
+}
+
+.sources h4 {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* КОМПАКТНЫЙ формат источника */
+.source-item {
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    background: white;
+    border-radius: 6px;
+    border-left: 3px solid #3b82f6;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.source-item:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transform: translateX(2px);
+}
+
+.source-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Иконка документа */
+.source-icon {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* Название и метаданные источника */
+.source-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.source-title {
+    color: #1f2937;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.source-meta {
+    color: #6b7280;
+    font-size: 11px;
+    margin-top: 2px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.source-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.source-meta span::before {
+    content: "•";
+    color: #9ca3af;
+}
+
+.source-meta span:first-child::before {
+    content: "";
+}
+
+/* Скрываем превью текста (показываем только по клику) */
+.source-preview {
+    display: none;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e5e7eb;
+    color: #4b5563;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.source-item.expanded .source-preview {
+    display: block;
+}
+
+/* Кнопка раскрытия деталей */
+.source-expand-btn {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.source-expand-btn:hover {
+    background: #eff6ff;
+}
+
+.source-expand-btn::after {
+    content: "›";
+    display: block;
+    transform: rotate(90deg);
+    transition: transform 0.2s ease;
+}
+
+.source-item.expanded .source-expand-btn::after {
+    transform: rotate(-90deg);
+}
+
+/* Теги сущностей (компактнее) */
+.entities {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.entity-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #dbeafe;
+    color: #1e40af;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+}
+
+/* Метаданные сообщения */
+.message-meta {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.complaint-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+    color: #dc2626;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #fecaca;
+    box-shadow: 0 1px 3px rgba(220, 38, 38, 0.1);
+}
+
+.model-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    background: #f3f4f6;
+    color: #6b7280;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 500;
+    border: 1px solid #e5e7eb;
+}
+
+/* Поддержка LaTeX формул (через KaTeX) */
+.katex {
+    font-size: 1.1em;
+}
+
+.katex-display {
+    margin: 16px 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* Улучшенная типографика для технических текстов */
+.message-content {
+    font-feature-settings: "kern" 1, "liga" 1;
+    text-rendering: optimizeLegibility;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .bot-message .message-content {
+        padding: 16px;
+    }
+    
+    .source-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .source-expand-btn {
+        align-self: flex-end;
+        margin-top: -24px;
+    }
+}
