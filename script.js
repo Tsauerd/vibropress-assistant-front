@@ -4,9 +4,9 @@
 
 // Определяем URL API в зависимости от окружения
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:8000'  // Для локальной разработки
-    : 'https://vibropress-ai-assistant.onrender.com';  // Production на Render
-
+    ? 'http://localhost:8000'
+    : 'https://vibropress-assistant-backend.onrender.com';  // ✅ ПРАВИЛЬНО
+    
 console.log('🔗 API URL:', API_URL);
 
 // =============================================================================
