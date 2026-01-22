@@ -9,6 +9,19 @@ const API_URL = window.location.hostname === 'localhost' || window.location.host
 console.log('🔗 API URL:', API_URL);
 
 // =============================================================================
+// SESSION (for server-side chat history / analytics)
+// =============================================================================
+
+function getOrCreateSessionId() {
+    let sessionId = localStorage.getItem('vibropress_session_id');
+    if (!sessionId) {
+        sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        localStorage.setItem('vibropress_session_id', sessionId);
+    }
+    return sessionId;
+}
+
+// =============================================================================
 // STORAGE & CHAT MANAGEMENT
 // =============================================================================
 
@@ -76,10 +89,17 @@ class ChatManager {
         }
         
         const chat = this.chats[this.currentChatId];
+
+        // IMPORTANT: preserve messageId if provided (so ratings + server analytics stay consistent)
+        const preservedMessageId =
+            message?.messageId ||
+            message?.message_id ||
+            ('msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9));
+
         chat.messages.push({
             ...message,
             timestamp: new Date().toISOString(),
-            messageId: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+            messageId: preservedMessageId
         });
         
         // Автоматически генерируем название чата из первого вопроса
@@ -105,19 +125,24 @@ class ChatManager {
     
     async sendRatingToServer(messageId, rating) {
         try {
-            // Опционально: отправка на backend для аналитики
-            await fetch(`${API_URL}/feedback`, {
+            const sessionId = getOrCreateSessionId();
+            
+            const response = await fetch(`${API_URL}/feedback`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message_id: messageId,
                     rating: rating,
+                    session_id: sessionId,
                     timestamp: new Date().toISOString()
                 })
             });
+
+            if (response.ok) {
+                console.log('✅ Рейтинг сохранён на сервере');
+            }
         } catch (e) {
-            // Если endpoint не существует - игнорируем
-            console.log('Feedback endpoint not available:', e.message);
+            console.log('⚠️ Не удалось сохранить рейтинг на сервере:', e.message);
         }
     }
     
@@ -569,12 +594,14 @@ function escapeHtml(text) {
 
 async function callAPI(userMessage) {
     try {
+        const sessionId = getOrCreateSessionId();
+
         conversationHistory.push({
             role: 'user',
             content: userMessage
         });
         
-        console.log('📤 Отправка запроса к API:', API_URL + '/chat');
+        console.log('📤 Отправка запроса к API:', API_URL + '/chat', { sessionId });
         
         const response = await fetch(`${API_URL}/chat`, {
             method: 'POST',
@@ -584,7 +611,8 @@ async function callAPI(userMessage) {
             body: JSON.stringify({
                 messages: conversationHistory,
                 use_rag: true,
-                max_results: 5
+                max_results: 5,
+                session_id: sessionId // ← добавлено
             })
         });
         
@@ -609,7 +637,8 @@ async function callAPI(userMessage) {
             response: `⚠️ Не удалось подключиться к API. Ошибка: ${error.message}\n\nЭто может быть связано с:\n1. API ещё не задеплоен на Render\n2. Cold start (первый запрос после простоя занимает ~30-60 сек)\n3. Проблемы с сетью\n\nПопробуйте ещё раз через минуту.`,
             sources: null,
             model_used: 'demo',
-            is_complaint: false
+            is_complaint: false,
+            message_id: 'demo_' + Date.now()
         };
     }
 }
@@ -637,7 +666,8 @@ async function sendMessage() {
             apiResponse.response,
             apiResponse.sources,
             apiResponse.model_used,
-            apiResponse.is_complaint
+            apiResponse.is_complaint,
+            apiResponse.message_id || apiResponse.messageId || null // ← используем server message_id если есть
         );
         
     } catch (error) {
