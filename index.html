@@ -15,8 +15,8 @@
             delimiters: [
                 {left: '$$', right: '$$', display: true},
                 {left: '$', right: '$', display: false},
-                {left: '\\[', right: '\\]', display: true},
-                {left: '\\(', right: '\\)', display: false}
+                {left: '\\(', right: '\\)', display: false},
+                {left: '\\[', right: '\\]', display: true}
             ],
             throwOnError: false
         });"></script>
@@ -92,15 +92,6 @@
                         <button class="chat-header-btn" onclick="newChat()">
                             <span>🆕</span> Новый чат
                         </button>
-                        <button class="chat-header-btn" onclick="toggleChatHistory()">
-                            <span>📚</span> История
-                        </button>
-                        <button class="chat-header-btn" onclick="showAnalytics()">
-                            <span>📊</span> Аналитика
-                        </button>
-                        <button class="chat-header-btn" onclick="chatManager.exportChats()">
-                            <span>💾</span> Экспорт
-                        </button>
                     </div>
                 </div>
                 
@@ -134,26 +125,6 @@
             </div>
         </div>
     </section>
-
-    <!-- Sidebar с историей чатов -->
-    <div class="chat-history-sidebar" id="chat-history-sidebar">
-        <div class="chat-history-header">
-            <h3>📚 История чатов</h3>
-            <button class="chat-history-close" onclick="toggleChatHistory()">×</button>
-        </div>
-        <div class="chat-history-actions">
-            <button class="chat-action-btn primary" onclick="newChat(); toggleChatHistory();">
-                🆕 Новый чат
-            </button>
-            <button class="chat-action-btn" onclick="chatManager.exportChats()">
-                💾 Экспорт
-            </button>
-        </div>
-        <div class="chat-history-list" id="chat-history-list"></div>
-    </div>
-
-    <!-- Overlay для закрытия sidebar -->
-    <div class="chat-history-overlay" id="chat-history-overlay" onclick="toggleChatHistory()"></div>
 
     <!-- Features Section -->
     <section id="features" class="features">

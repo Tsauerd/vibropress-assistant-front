@@ -9,19 +9,6 @@ const API_URL = window.location.hostname === 'localhost' || window.location.host
 console.log('🔗 API URL:', API_URL);
 
 // =============================================================================
-// SESSION (for server-side chat history / analytics)
-// =============================================================================
-
-function getOrCreateSessionId() {
-    let sessionId = localStorage.getItem('vibropress_session_id');
-    if (!sessionId) {
-        sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-        localStorage.setItem('vibropress_session_id', sessionId);
-    }
-    return sessionId;
-}
-
-// =============================================================================
 // STORAGE & CHAT MANAGEMENT
 // =============================================================================
 
@@ -30,6 +17,16 @@ class ChatManager {
         this.currentChatId = null;
         this.chats = this.loadChats();
         this.ratings = this.loadRatings();
+        this.sessionId = this.getOrCreateSessionId();
+    }
+    
+    getOrCreateSessionId() {
+        let sessionId = localStorage.getItem('vibropress_session_id');
+        if (!sessionId) {
+            sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('vibropress_session_id', sessionId);
+        }
+        return sessionId;
     }
     
     loadChats() {
@@ -89,20 +86,12 @@ class ChatManager {
         }
         
         const chat = this.chats[this.currentChatId];
-
-        // IMPORTANT: preserve messageId if provided (so ratings + server analytics stay consistent)
-        const preservedMessageId =
-            message?.messageId ||
-            message?.message_id ||
-            ('msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9));
-
         chat.messages.push({
             ...message,
             timestamp: new Date().toISOString(),
-            messageId: preservedMessageId
+            messageId: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
         });
         
-        // Автоматически генерируем название чата из первого вопроса
         if (chat.messages.length === 1 && message.role === 'user') {
             chat.title = message.content.substring(0, 50) + (message.content.length > 50 ? '...' : '');
         }
@@ -118,92 +107,29 @@ class ChatManager {
             chatId: this.currentChatId
         };
         this.saveRatings();
-        
-        // Отправляем аналитику на сервер (опционально)
         this.sendRatingToServer(messageId, rating);
     }
     
     async sendRatingToServer(messageId, rating) {
         try {
-            const sessionId = getOrCreateSessionId();
-            
-            const response = await fetch(`${API_URL}/feedback`, {
+            await fetch(`${API_URL}/feedback`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message_id: messageId,
                     rating: rating,
-                    session_id: sessionId,
+                    session_id: this.sessionId,
                     timestamp: new Date().toISOString()
                 })
             });
-
-            if (response.ok) {
-                console.log('✅ Рейтинг сохранён на сервере');
-            }
+            console.log('✅ Рейтинг сохранён на сервере');
         } catch (e) {
             console.log('⚠️ Не удалось сохранить рейтинг на сервере:', e.message);
         }
     }
     
-    getChat(chatId) {
-        return this.chats[chatId];
-    }
-    
-    getAllChats() {
-        return Object.values(this.chats).sort((a, b) => 
-            new Date(b.updated) - new Date(a.updated)
-        );
-    }
-    
-    deleteChat(chatId) {
-        delete this.chats[chatId];
-        this.saveChats();
-        if (this.currentChatId === chatId) {
-            this.currentChatId = null;
-        }
-    }
-    
     clearCurrentChat() {
         this.currentChatId = null;
-    }
-    
-    exportChats() {
-        const dataStr = JSON.stringify({
-            chats: this.chats,
-            ratings: this.ratings,
-            exported: new Date().toISOString()
-        }, null, 2);
-        
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `vibropress_chats_${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
-    }
-    
-    getAnalytics() {
-        const totalChats = Object.keys(this.chats).length;
-        const totalMessages = Object.values(this.chats).reduce((sum, chat) => sum + chat.messages.length, 0);
-        const totalRatings = Object.keys(this.ratings).length;
-        const avgRating = totalRatings > 0 
-            ? Object.values(this.ratings).reduce((sum, r) => sum + r.rating, 0) / totalRatings 
-            : 0;
-        
-        const ratingDistribution = {};
-        for (let i = 0; i <= 5; i++) ratingDistribution[i] = 0;
-        Object.values(this.ratings).forEach(r => {
-            ratingDistribution[r.rating]++;
-        });
-        
-        return {
-            totalChats,
-            totalMessages,
-            totalRatings,
-            avgRating: avgRating.toFixed(2),
-            ratingDistribution
-        };
     }
 }
 
@@ -245,7 +171,6 @@ const modeNames = {
 
 let conversationHistory = [];
 
-// Mode switching
 document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -275,7 +200,6 @@ function updateExampleQuestions(mode) {
 
 updateExampleQuestions('gost');
 
-// Chat input auto-resize
 const chatInput = document.getElementById('chat-input');
 chatInput.addEventListener('input', function() {
     this.style.height = 'auto';
@@ -297,7 +221,6 @@ function addUserMessage(text) {
     chatMessages.appendChild(messageDiv);
     scrollToBottom();
     
-    // Сохраняем в историю
     chatManager.addMessage({
         role: 'user',
         content: text
@@ -331,10 +254,8 @@ function createRatingButtons(messageId) {
             const rating = parseInt(this.dataset.rating);
             const msgId = this.dataset.messageId;
             
-            // Сохраняем рейтинг
             chatManager.rateMessage(msgId, rating);
             
-            // Визуальная обратная связь
             buttonsDiv.querySelectorAll('.rating-btn').forEach(b => {
                 b.classList.remove('selected');
                 if (parseInt(b.dataset.rating) <= rating) {
@@ -342,11 +263,9 @@ function createRatingButtons(messageId) {
                 }
             });
             
-            // Показываем благодарность
             label.textContent = `Спасибо за оценку! (${rating}/5)`;
             label.style.color = '#10b981';
             
-            // Логируем для аналитики
             console.log('📊 Rating submitted:', { messageId: msgId, rating, timestamp: new Date() });
         });
         
@@ -355,6 +274,30 @@ function createRatingButtons(messageId) {
     
     ratingDiv.appendChild(buttonsDiv);
     return ratingDiv;
+}
+
+// =============================================================================
+// LATEX FORMULA CONVERSION
+// =============================================================================
+
+function convertMarkdownMathToLatex(text) {
+    // Конвертирует обратные кавычки с М в LaTeX формулы
+    // `25М`Па → $25$ МПа
+    text = text.replace(/`(\d+)М`\s?(Па|МПа)/gi, (match, num, unit) => {
+        return `$${num}$ ${unit}`;
+    });
+    
+    // \( ... \) уже LaTeX, оставляем как есть
+    // \frac{}{} тоже LaTeX
+    
+    // Конвертируем простые выражения в LaTeX если не в формуле
+    // n = 4 → $n = 4$
+    text = text.replace(/\b([a-zA-Z_]+)\s*=\s*(\d+)\b/g, (match, variable, value) => {
+        // Проверяем что не внутри уже существующей формулы
+        return `$${variable} = ${value}$`;
+    });
+    
+    return text;
 }
 
 // =============================================================================
@@ -472,10 +415,13 @@ function createCompactSource(source) {
 }
 
 function formatResponseText(text) {
-    text = text.replace(/(\d+)°C/g, '<code>$1°C</code>');
-    text = text.replace(/(\d+[,.]?\d*)\s?(mm|мм|м|см|km|км)/gi, '<code>$1$2</code>');
-    text = text.replace(/\b([BMFР])(\d+)\b/g, '<code>$1$2</code>');
-    text = text.replace(/\b([A-Z][a-z]?\d+)\b/g, '<code>$1</code>');
+    // Конвертируем формулы
+    text = convertMarkdownMathToLatex(text);
+    
+    // НЕ форматируем температуры и размеры - они уже в LaTeX формате
+    // text = text.replace(/(\d+)°C/g, '<code>$1°C</code>');
+    // text = text.replace(/(\d+[,.]?\d*)\s?(mm|мм|м|см|km|км)/gi, '<code>$1$2</code>');
+    
     return text;
 }
 
@@ -483,7 +429,6 @@ function addBotMessage(text, sources = null, modelUsed = null, isComplaint = fal
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message bot-message';
     
-    // Генерируем ID если не передан
     if (!messageId) {
         messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
@@ -494,19 +439,20 @@ function addBotMessage(text, sources = null, modelUsed = null, isComplaint = fal
     let messageHTML = `
         <div class="message-avatar">🤖</div>
         <div class="message-content">
-            <p>${formattedText}</p>
+            ${formattedText.split('\n').map(line => line.trim() ? `<p>${line}</p>` : '').join('')}
     `;
     
-    if (isComplaint || modelUsed) {
-        messageHTML += `<div class="message-meta">`;
-        if (isComplaint) {
-            messageHTML += `<span class="complaint-badge">⚠️ Претензия</span>`;
-        }
-        if (modelUsed) {
-            messageHTML += `<span class="model-badge">Модель: ${modelUsed}</span>`;
-        }
-        messageHTML += `</div>`;
-    }
+    // УБРАЛИ отображение модели и complaint badge
+    // if (isComplaint || modelUsed) {
+    //     messageHTML += `<div class="message-meta">`;
+    //     if (isComplaint) {
+    //         messageHTML += `<span class="complaint-badge">⚠️ Претензия</span>`;
+    //     }
+    //     if (modelUsed) {
+    //         messageHTML += `<span class="model-badge">Модель: ${modelUsed}</span>`;
+    //     }
+    //     messageHTML += `</div>`;
+    // }
     
     messageHTML += `</div>`;
     messageDiv.innerHTML = messageHTML;
@@ -526,14 +472,12 @@ function addBotMessage(text, sources = null, modelUsed = null, isComplaint = fal
         messageDiv.querySelector('.message-content').appendChild(sourcesContainer);
     }
     
-    // Добавляем рейтинговые кнопки
     const ratingButtons = createRatingButtons(messageId);
     messageDiv.querySelector('.message-content').appendChild(ratingButtons);
     
     chatMessages.appendChild(messageDiv);
     scrollToBottom();
     
-    // Сохраняем в историю
     chatManager.addMessage({
         role: 'assistant',
         content: text,
@@ -543,12 +487,14 @@ function addBotMessage(text, sources = null, modelUsed = null, isComplaint = fal
         messageId: messageId
     });
     
-    // Рендерим формулы если есть KaTeX
+    // Рендерим LaTeX формулы
     if (typeof renderMathInElement !== 'undefined') {
         renderMathInElement(messageDiv, {
             delimiters: [
                 {left: '$$', right: '$$', display: true},
-                {left: '$', right: '$', display: false}
+                {left: '$', right: '$', display: false},
+                {left: '\\(', right: '\\)', display: false},
+                {left: '\\[', right: '\\]', display: true}
             ],
             throwOnError: false
         });
@@ -594,14 +540,12 @@ function escapeHtml(text) {
 
 async function callAPI(userMessage) {
     try {
-        const sessionId = getOrCreateSessionId();
-
         conversationHistory.push({
             role: 'user',
             content: userMessage
         });
         
-        console.log('📤 Отправка запроса к API:', API_URL + '/chat', { sessionId });
+        console.log('📤 Отправка запроса к API:', API_URL + '/chat');
         
         const response = await fetch(`${API_URL}/chat`, {
             method: 'POST',
@@ -612,7 +556,7 @@ async function callAPI(userMessage) {
                 messages: conversationHistory,
                 use_rag: true,
                 max_results: 5,
-                session_id: sessionId // ← добавлено
+                session_id: chatManager.sessionId
             })
         });
         
@@ -667,7 +611,7 @@ async function sendMessage() {
             apiResponse.sources,
             apiResponse.model_used,
             apiResponse.is_complaint,
-            apiResponse.message_id || apiResponse.messageId || null // ← используем server message_id если есть
+            apiResponse.message_id
         );
         
     } catch (error) {
@@ -691,7 +635,7 @@ chatInput.addEventListener('keydown', (e) => {
 });
 
 // =============================================================================
-// CHECK API STATUS ON LOAD
+// CHECK API STATUS
 // =============================================================================
 
 async function checkAPIStatus() {
@@ -725,91 +669,8 @@ async function checkAPIStatus() {
 }
 
 // =============================================================================
-// CHAT HISTORY UI
+// CHAT MANAGEMENT
 // =============================================================================
-
-function toggleChatHistory() {
-    const sidebar = document.getElementById('chat-history-sidebar');
-    sidebar.classList.toggle('open');
-    updateChatHistoryList();
-}
-
-function updateChatHistoryList() {
-    const container = document.getElementById('chat-history-list');
-    if (!container) return;
-    
-    const chats = chatManager.getAllChats();
-    
-    if (chats.length === 0) {
-        container.innerHTML = '<div class="empty-history">История чатов пуста</div>';
-        return;
-    }
-    
-    container.innerHTML = chats.map(chat => `
-        <div class="chat-history-item" data-chat-id="${chat.id}">
-            <div class="chat-item-title">${chat.title}</div>
-            <div class="chat-item-meta">
-                <span>${new Date(chat.updated).toLocaleDateString('ru-RU')}</span>
-                <span>${chat.messages.length} сообщений</span>
-            </div>
-            <button class="chat-item-delete" data-chat-id="${chat.id}">🗑️</button>
-        </div>
-    `).join('');
-    
-    // Event listeners
-    container.querySelectorAll('.chat-history-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-            if (!e.target.classList.contains('chat-item-delete')) {
-                loadChat(item.dataset.chatId);
-            }
-        });
-    });
-    
-    container.querySelectorAll('.chat-item-delete').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (confirm('Удалить этот чат?')) {
-                chatManager.deleteChat(btn.dataset.chatId);
-                updateChatHistoryList();
-            }
-        });
-    });
-}
-
-function loadChat(chatId) {
-    const chat = chatManager.getChat(chatId);
-    if (!chat) return;
-    
-    // Очищаем текущий чат
-    chatMessages.innerHTML = '';
-    conversationHistory = [];
-    
-    // Загружаем сообщения
-    chat.messages.forEach(msg => {
-        if (msg.role === 'user') {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message user-message';
-            messageDiv.innerHTML = `
-                <div class="message-avatar">👤</div>
-                <div class="message-content">
-                    <p>${escapeHtml(msg.content)}</p>
-                </div>
-            `;
-            chatMessages.appendChild(messageDiv);
-        } else {
-            addBotMessage(msg.content, msg.sources, msg.model_used, msg.is_complaint, msg.messageId);
-        }
-        
-        conversationHistory.push({
-            role: msg.role,
-            content: msg.content
-        });
-    });
-    
-    chatManager.currentChatId = chatId;
-    toggleChatHistory();
-    scrollToBottom();
-}
 
 function newChat() {
     chatMessages.innerHTML = `
@@ -825,26 +686,6 @@ function newChat() {
     chatManager.clearCurrentChat();
 }
 
-function showAnalytics() {
-    const analytics = chatManager.getAnalytics();
-    alert(`
-📊 Аналитика VibroPress AI
-
-Всего чатов: ${analytics.totalChats}
-Всего сообщений: ${analytics.totalMessages}
-Всего оценок: ${analytics.totalRatings}
-Средний рейтинг: ${analytics.avgRating}/5
-
-Распределение оценок:
-⭐ 5: ${analytics.ratingDistribution[5]}
-⭐ 4: ${analytics.ratingDistribution[4]}
-⭐ 3: ${analytics.ratingDistribution[3]}
-⭐ 2: ${analytics.ratingDistribution[2]}
-⭐ 1: ${analytics.ratingDistribution[1]}
-⭐ 0: ${analytics.ratingDistribution[0]}
-    `);
-}
-
 // =============================================================================
 // INIT
 // =============================================================================
@@ -852,21 +693,17 @@ function showAnalytics() {
 document.addEventListener('DOMContentLoaded', () => {
     checkAPIStatus();
     
-    // Создаём первый чат если нет истории
     if (Object.keys(chatManager.chats).length === 0) {
         chatManager.createChat('Первый чат');
     }
     
-    console.log('💾 Loaded chats:', chatManager.getAllChats().length);
-    console.log('📊 Analytics:', chatManager.getAnalytics());
+    console.log('💾 Loaded chats:', Object.keys(chatManager.chats).length);
 });
 
-// Экспорт для дебага в консоли
 window.chatManager = chatManager;
-window.showAnalytics = showAnalytics;
 
 // =============================================================================
-// NAVIGATION (оставшийся код без изменений)
+// NAVIGATION
 // =============================================================================
 
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
