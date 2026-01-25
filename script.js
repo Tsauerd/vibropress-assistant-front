@@ -11,7 +11,7 @@ const CONFIG = {
     // API URL - ваш backend на Render
     API_URL: 'https://vibropress-assistant-backend.onrender.com',
     
-    // Правильный endpoint (из /docs)
+    // Endpoint для чата
     CHAT_ENDPOINT: '/chat',
     
     // Режимы работы и примеры вопросов
@@ -59,6 +59,7 @@ let currentMode = 'gost';
 let sessionId = generateSessionId();
 let isLoading = false;
 let chatHistory = [];
+let conversationMessages = []; // История сообщений для контекста
 
 // ============================================================================
 // INITIALIZATION
@@ -72,8 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
     updateExampleQuestions();
     
     console.log('✅ VibroPress AI initialized');
-    console.log('API URL:', CONFIG.API_URL);
-    console.log('Chat endpoint:', CONFIG.CHAT_ENDPOINT);
+    console.log('API:', CONFIG.API_URL + CONFIG.CHAT_ENDPOINT);
+    console.log('Session:', sessionId);
 });
 
 function initializeChat() {
@@ -126,7 +127,15 @@ async function sendMessage() {
     
     if (!message || isLoading) return;
     
+    // Добавляем сообщение пользователя в UI
     addMessageToUI('user', message);
+    
+    // Добавляем в историю разговора
+    conversationMessages.push({
+        role: 'user',
+        content: message
+    });
+    
     chatInput.value = '';
     autoResizeTextarea.call(chatInput);
     
@@ -137,12 +146,20 @@ async function sendMessage() {
         const response = await sendToAPI(message);
         removeTypingIndicator(loadingId);
         addBotResponse(response);
+        
+        // Добавляем ответ бота в историю
+        const botAnswer = response.answer || response.response || response.content || '';
+        conversationMessages.push({
+            role: 'assistant',
+            content: botAnswer
+        });
+        
         saveChatMessage(message, response);
         
     } catch (error) {
         console.error('API Error:', error);
         removeTypingIndicator(loadingId);
-        addMessageToUI('bot', `❌ Ошибка: ${error.message}\n\n💡 Проверьте консоль браузера (F12) для деталей.`);
+        addMessageToUI('bot', `❌ Ошибка: ${error.message}`);
     } finally {
         setLoading(false);
     }
@@ -151,85 +168,43 @@ async function sendMessage() {
 async function sendToAPI(message) {
     const url = `${CONFIG.API_URL}${CONFIG.CHAT_ENDPOINT}`;
     
-    // Пробуем разные форматы payload
-    const payloads = [
-        // Формат 1: query + session_id (наиболее вероятный)
-        {
-            query: message,
-            session_id: sessionId,
-            task_type: currentMode
-        },
-        // Формат 2: message
-        {
-            message: message,
-            session_id: sessionId
-        },
-        // Формат 3: question
-        {
-            question: message,
-            session_id: sessionId
-        },
-        // Формат 4: text
-        {
-            text: message,
-            session_id: sessionId
-        },
-        // Формат 5: messages array (OpenAI style)
-        {
-            messages: [{ role: 'user', content: message }],
-            session_id: sessionId
-        }
-    ];
+    // Правильный формат из документации API
+    const payload = {
+        messages: [
+            {
+                role: 'user',
+                content: message
+            }
+        ],
+        use_rag: true,
+        max_results: 5,
+        session_id: sessionId
+    };
     
-    let lastError = null;
+    console.log('📤 Отправляем запрос:', url);
+    console.log('📦 Payload:', JSON.stringify(payload, null, 2));
     
-    for (let i = 0; i < payloads.length; i++) {
-        const payload = payloads[i];
-        
-        try {
-            console.log(`🔄 Пробуем формат ${i + 1}:`, payload);
-            
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-            
-            console.log(`Response status: ${response.status}`);
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('✅ Успешный ответ:', data);
-                return data;
-            }
-            
-            // 422 = неправильный формат, пробуем следующий
-            if (response.status === 422) {
-                const errorData = await response.json().catch(() => ({}));
-                console.log(`❌ Формат ${i + 1} не подошёл (422):`, errorData);
-                lastError = new Error(`Неверный формат запроса: ${JSON.stringify(errorData)}`);
-                continue;
-            }
-            
-            // Другие ошибки
-            const errorText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
-            
-        } catch (fetchError) {
-            console.log(`❌ Формат ${i + 1} ошибка:`, fetchError.message);
-            lastError = fetchError;
-            
-            // Если это не 422, прерываем цикл
-            if (!fetchError.message.includes('422') && !fetchError.message.includes('Неверный формат')) {
-                throw fetchError;
-            }
-        }
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+    
+    console.log('📥 Response status:', response.status);
+    
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
     
-    throw lastError || new Error('Не удалось отправить запрос');
+    const data = await response.json();
+    console.log('✅ Response data:', data);
+    
+    return data;
 }
 
 // ============================================================================
@@ -261,9 +236,9 @@ function addBotResponse(response) {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message bot-message';
     
-    // Пробуем разные поля для ответа
+    // Получаем текст ответа
     const answer = response.answer || response.response || response.content || 
-                   response.text || response.message || response.result || 
+                   response.text || response.message || 
                    (typeof response === 'string' ? response : JSON.stringify(response));
     
     let html = `
@@ -272,14 +247,10 @@ function addBotResponse(response) {
             ${formatMessageContent(answer)}
     `;
     
-    // Sources
-    if (response.sources && response.sources.length > 0) {
-        html += renderSources(response.sources);
-    }
-    
-    // Chunks (альтернативное название для sources)
-    if (response.chunks && response.chunks.length > 0) {
-        html += renderSources(response.chunks);
+    // Sources / Chunks
+    const sources = response.sources || response.chunks || response.documents || [];
+    if (sources.length > 0) {
+        html += renderSources(sources);
     }
     
     // Images
@@ -292,7 +263,7 @@ function addBotResponse(response) {
         html += renderEntities(response.entities);
     }
     
-    // Complaint badge
+    // Meta info
     if (response.is_complaint || currentMode === 'defects') {
         html += `<div class="message-meta">
             <span class="complaint-badge">Работа с претензией</span>
@@ -305,7 +276,7 @@ function addBotResponse(response) {
     chatMessages.appendChild(messageDiv);
     scrollToBottom();
     
-    // KaTeX
+    // Render math formulas
     if (typeof renderMathInElement !== 'undefined') {
         renderMathInElement(messageDiv, {
             delimiters: [
@@ -322,7 +293,7 @@ function formatMessageContent(content) {
     
     let formatted = escapeHtml(content);
     
-    // Markdown formatting
+    // Markdown
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     formatted = formatted.replace(/__(.*?)__/g, '<strong>$1</strong>');
     formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
@@ -332,6 +303,7 @@ function formatMessageContent(content) {
     // Paragraphs
     const paragraphs = formatted.split(/\n\n+/);
     formatted = paragraphs.map(p => {
+        // Bullet lists
         if (p.match(/^[\s]*[-•*]\s/m)) {
             const items = p.split(/\n/).filter(line => line.trim());
             const listItems = items.map(item => {
@@ -341,6 +313,7 @@ function formatMessageContent(content) {
             return `<ul>${listItems}</ul>`;
         }
         
+        // Numbered lists
         if (p.match(/^[\s]*\d+[.)]\s/m)) {
             const items = p.split(/\n/).filter(line => line.trim());
             const listItems = items.map(item => {
@@ -367,9 +340,9 @@ function renderSources(sources) {
         
         html += `
             <div class="source-item">
-                <strong>${escapeHtml(docName)}</strong>
+                <strong>${escapeHtml(String(docName))}</strong>
                 ${page ? `<span> • стр. ${page}</span>` : ''}
-                ${text ? `<p>${escapeHtml(text.substring(0, 250))}${text.length > 250 ? '...' : ''}</p>` : ''}
+                ${text ? `<p>${escapeHtml(String(text).substring(0, 250))}${text.length > 250 ? '...' : ''}</p>` : ''}
             </div>
         `;
     });
@@ -451,6 +424,8 @@ function removeTypingIndicator(id) {
 
 function updateExampleQuestions() {
     const container = document.getElementById('example-questions');
+    if (!container) return;
+    
     const examples = CONFIG.modes[currentMode].examples;
     
     container.innerHTML = examples.map(q => 
@@ -463,7 +438,7 @@ function updateExampleQuestions() {
 // ============================================================================
 
 function generateSessionId() {
-    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
 
 function escapeHtml(text) {
@@ -475,7 +450,9 @@ function escapeHtml(text) {
 
 function scrollToBottom() {
     const chatMessages = document.getElementById('chat-messages');
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    if (chatMessages) {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
 }
 
 function autoResizeTextarea() {
@@ -488,18 +465,20 @@ function setLoading(loading) {
     const sendBtn = document.getElementById('send-btn');
     const chatInput = document.getElementById('chat-input');
     
-    sendBtn.disabled = loading;
-    chatInput.disabled = loading;
+    if (sendBtn) sendBtn.disabled = loading;
+    if (chatInput) chatInput.disabled = loading;
 }
 
 function askQuestion(question) {
     const chatInput = document.getElementById('chat-input');
-    chatInput.value = question;
-    sendMessage();
+    if (chatInput) {
+        chatInput.value = question;
+        sendMessage();
+    }
 }
 
 // ============================================================================
-// CHAT HISTORY
+// CHAT HISTORY (localStorage)
 // ============================================================================
 
 function saveChatMessage(userMessage, botResponse) {
@@ -519,7 +498,7 @@ function saveChatMessage(userMessage, botResponse) {
         if (saved.length > 50) saved.shift();
         localStorage.setItem('vibropress_history', JSON.stringify(saved));
     } catch (e) {
-        console.warn('Could not save to localStorage:', e);
+        console.warn('localStorage error:', e);
     }
     
     updateChatHistoryUI();
@@ -530,7 +509,6 @@ function loadChatHistory() {
         chatHistory = JSON.parse(localStorage.getItem('vibropress_history') || '[]');
         updateChatHistoryUI();
     } catch (e) {
-        console.warn('Could not load chat history:', e);
         chatHistory = [];
     }
 }
@@ -544,31 +522,23 @@ function updateChatHistoryUI() {
         return;
     }
     
-    const grouped = {};
-    chatHistory.forEach(entry => {
-        const date = new Date(entry.timestamp).toLocaleDateString('ru-RU');
-        if (!grouped[date]) grouped[date] = [];
-        grouped[date].push(entry);
-    });
-    
     let html = '';
-    Object.keys(grouped).reverse().forEach(date => {
-        grouped[date].reverse().forEach(entry => {
-            const preview = entry.userMessage.substring(0, 50) + (entry.userMessage.length > 50 ? '...' : '');
-            const time = new Date(entry.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-            const modeName = CONFIG.modes[entry.mode]?.name || entry.mode;
-            
-            html += `
-                <div class="chat-history-item" onclick="loadChatEntry(${entry.id})">
-                    <div class="chat-item-title">${escapeHtml(preview)}</div>
-                    <div class="chat-item-meta">
-                        <span>${date} ${time}</span>
-                        <span>${modeName}</span>
-                    </div>
-                    <button class="chat-item-delete" onclick="event.stopPropagation(); deleteChatEntry(${entry.id})">🗑️</button>
+    [...chatHistory].reverse().forEach(entry => {
+        const preview = entry.userMessage.substring(0, 50) + (entry.userMessage.length > 50 ? '...' : '');
+        const date = new Date(entry.timestamp).toLocaleDateString('ru-RU');
+        const time = new Date(entry.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        const modeName = CONFIG.modes[entry.mode]?.name || entry.mode;
+        
+        html += `
+            <div class="chat-history-item" onclick="loadChatEntry(${entry.id})">
+                <div class="chat-item-title">${escapeHtml(preview)}</div>
+                <div class="chat-item-meta">
+                    <span>${date} ${time}</span>
+                    <span>${modeName}</span>
                 </div>
-            `;
-        });
+                <button class="chat-item-delete" onclick="event.stopPropagation(); deleteChatEntry(${entry.id})">🗑️</button>
+            </div>
+        `;
     });
     
     container.innerHTML = html;
@@ -594,9 +564,7 @@ function deleteChatEntry(id) {
     
     try {
         localStorage.setItem('vibropress_history', JSON.stringify(chatHistory));
-    } catch (e) {
-        console.warn('Could not save to localStorage:', e);
-    }
+    } catch (e) {}
     
     updateChatHistoryUI();
 }
@@ -611,22 +579,27 @@ function clearHistory() {
 
 function newChat() {
     sessionId = generateSessionId();
+    conversationMessages = [];
     
     const chatMessages = document.getElementById('chat-messages');
-    chatMessages.innerHTML = `
-        <div class="message bot-message">
-            <div class="message-avatar">🤖</div>
-            <div class="message-content">
-                <p>Здравствуйте! Я <strong>VibroPress AI</strong> — ваш интеллектуальный помощник.</p>
-                <p>Выберите режим работы выше и задайте вопрос. Я помогу найти информацию в базе знаний.</p>
+    if (chatMessages) {
+        chatMessages.innerHTML = `
+            <div class="message bot-message">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <p>Здравствуйте! Я <strong>VibroPress AI</strong> — ваш интеллектуальный помощник.</p>
+                    <p>Выберите режим работы выше и задайте вопрос. Я помогу найти информацию в базе знаний.</p>
+                </div>
             </div>
-        </div>
-    `;
+        `;
+    }
     
     const sidebar = document.getElementById('chat-history-sidebar');
     if (sidebar && sidebar.classList.contains('open')) {
         toggleChatHistory();
     }
+    
+    console.log('🆕 Новый чат, session:', sessionId);
 }
 
 function toggleChatHistory() {
