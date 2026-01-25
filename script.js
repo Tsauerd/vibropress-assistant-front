@@ -1,6 +1,6 @@
 /**
  * VibroPress AI - Frontend Script
- * Интерактивный чат-бот для производства вибропрессованных изделий
+ * С рейтингом ответов и раскрывающимися источниками
  */
 
 // ============================================================================
@@ -8,13 +8,10 @@
 // ============================================================================
 
 const CONFIG = {
-    // API URL - ваш backend на Render
     API_URL: 'https://vibropress-assistant-backend.onrender.com',
-    
-    // Endpoint для чата
     CHAT_ENDPOINT: '/chat',
+    FEEDBACK_ENDPOINT: '/feedback',  // POST {message_id, rating, session_id, comment}
     
-    // Режимы работы и примеры вопросов
     modes: {
         gost: {
             name: 'ГОСТ/СП',
@@ -59,7 +56,8 @@ let currentMode = 'gost';
 let sessionId = generateSessionId();
 let isLoading = false;
 let chatHistory = [];
-let conversationMessages = []; // История сообщений для контекста
+let messageCounter = 0;
+let lastMessageId = null;  // ID сообщения от сервера для рейтинга
 
 // ============================================================================
 // INITIALIZATION
@@ -73,28 +71,20 @@ document.addEventListener('DOMContentLoaded', () => {
     updateExampleQuestions();
     
     console.log('✅ VibroPress AI initialized');
-    console.log('API:', CONFIG.API_URL + CONFIG.CHAT_ENDPOINT);
     console.log('Session:', sessionId);
 });
 
 function initializeChat() {
-    const chatMessages = document.getElementById('chat-messages');
     const chatInput = document.getElementById('chat-input');
-    
-    if (!chatMessages || !chatInput) {
-        console.error('Chat elements not found');
-        return;
+    if (chatInput) {
+        chatInput.addEventListener('input', autoResizeTextarea);
     }
-    
-    chatInput.addEventListener('input', autoResizeTextarea);
 }
 
 function initializeModeButtons() {
-    const modeButtons = document.querySelectorAll('.mode-btn');
-    
-    modeButtons.forEach(btn => {
+    document.querySelectorAll('.mode-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            modeButtons.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentMode = btn.dataset.mode;
             document.getElementById('current-mode').textContent = CONFIG.modes[currentMode].name;
@@ -107,14 +97,15 @@ function initializeInputHandlers() {
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
     
-    sendBtn.addEventListener('click', sendMessage);
-    
-    chatInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
+    if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+    if (chatInput) {
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    }
 }
 
 // ============================================================================
@@ -127,15 +118,7 @@ async function sendMessage() {
     
     if (!message || isLoading) return;
     
-    // Добавляем сообщение пользователя в UI
     addMessageToUI('user', message);
-    
-    // Добавляем в историю разговора
-    conversationMessages.push({
-        role: 'user',
-        content: message
-    });
-    
     chatInput.value = '';
     autoResizeTextarea.call(chatInput);
     
@@ -145,17 +128,8 @@ async function sendMessage() {
     try {
         const response = await sendToAPI(message);
         removeTypingIndicator(loadingId);
-        addBotResponse(response);
-        
-        // Добавляем ответ бота в историю
-        const botAnswer = response.answer || response.response || response.content || '';
-        conversationMessages.push({
-            role: 'assistant',
-            content: botAnswer
-        });
-        
+        addBotResponse(response, message);
         saveChatMessage(message, response);
-        
     } catch (error) {
         console.error('API Error:', error);
         removeTypingIndicator(loadingId);
@@ -168,21 +142,15 @@ async function sendMessage() {
 async function sendToAPI(message) {
     const url = `${CONFIG.API_URL}${CONFIG.CHAT_ENDPOINT}`;
     
-    // Правильный формат из документации API
+    // Формат из /docs: messages, use_rag, max_results, session_id
     const payload = {
-        messages: [
-            {
-                role: 'user',
-                content: message
-            }
-        ],
+        messages: [{ role: 'user', content: message }],
         use_rag: true,
         max_results: 5,
         session_id: sessionId
     };
     
-    console.log('📤 Отправляем запрос:', url);
-    console.log('📦 Payload:', JSON.stringify(payload, null, 2));
+    console.log('📤 Request:', payload);
     
     const response = await fetch(url, {
         method: 'POST',
@@ -193,18 +161,80 @@ async function sendToAPI(message) {
         body: JSON.stringify(payload)
     });
     
-    console.log('📥 Response status:', response.status);
-    
     if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
         throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
     
     const data = await response.json();
-    console.log('✅ Response data:', data);
-    
+    console.log('📥 Response:', data);
     return data;
+}
+
+// ============================================================================
+// FEEDBACK / RATING (формат из /docs)
+// ============================================================================
+
+async function submitRating(messageId, rating, comment = '') {
+    try {
+        // Формат из скриншота: {message_id, rating, session_id, comment}
+        const payload = {
+            message_id: messageId,
+            rating: rating,
+            session_id: sessionId,
+            comment: comment
+        };
+        
+        console.log('⭐ Отправляем оценку:', payload);
+        
+        const response = await fetch(`${CONFIG.API_URL}${CONFIG.FEEDBACK_ENDPOINT}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        if (response.ok) {
+            console.log('✅ Оценка сохранена');
+            return true;
+        } else {
+            const errorText = await response.text();
+            console.error('❌ Ошибка сохранения оценки:', errorText);
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Ошибка отправки оценки:', error);
+        return false;
+    }
+}
+
+function handleRatingClick(button, messageId) {
+    const rating = parseInt(button.dataset.rating);
+    const container = button.closest('.rating-buttons');
+    
+    // Убираем selected у всех кнопок
+    container.querySelectorAll('.rating-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    
+    // Добавляем selected к нажатой
+    button.classList.add('selected');
+    
+    // Отправляем на сервер
+    submitRating(messageId, rating).then(success => {
+        if (success) {
+            // Показываем подтверждение
+            const ratingContainer = button.closest('.rating-container');
+            let thanks = ratingContainer.querySelector('.rating-thanks');
+            if (!thanks) {
+                thanks = document.createElement('span');
+                thanks.className = 'rating-thanks';
+                thanks.textContent = '✓ Спасибо!';
+                ratingContainer.appendChild(thanks);
+            }
+        }
+    });
 }
 
 // ============================================================================
@@ -213,7 +243,6 @@ async function sendToAPI(message) {
 
 function addMessageToUI(role, content) {
     const chatMessages = document.getElementById('chat-messages');
-    
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${role}-message`;
     
@@ -230,16 +259,20 @@ function addMessageToUI(role, content) {
     scrollToBottom();
 }
 
-function addBotResponse(response) {
+function addBotResponse(response, userQuery) {
     const chatMessages = document.getElementById('chat-messages');
+    
+    // Получаем message_id из ответа сервера (если есть)
+    const serverMessageId = response.message_id || response.id || response.request_id;
+    const messageId = serverMessageId || ('msg_' + (++messageCounter) + '_' + Date.now());
     
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message bot-message';
+    messageDiv.setAttribute('data-message-id', messageId);
     
     // Получаем текст ответа
     const answer = response.answer || response.response || response.content || 
-                   response.text || response.message || 
-                   (typeof response === 'string' ? response : JSON.stringify(response));
+                   response.text || response.message || JSON.stringify(response);
     
     let html = `
         <div class="message-avatar">🤖</div>
@@ -247,13 +280,13 @@ function addBotResponse(response) {
             ${formatMessageContent(answer)}
     `;
     
-    // Sources / Chunks
+    // Источники (раскрывающиеся)
     const sources = response.sources || response.chunks || response.documents || [];
     if (sources.length > 0) {
-        html += renderSources(sources);
+        html += renderCollapsibleSources(sources);
     }
     
-    // Images
+    // Изображения
     if (response.images && response.images.length > 0) {
         html += renderImages(response.images);
     }
@@ -263,12 +296,8 @@ function addBotResponse(response) {
         html += renderEntities(response.entities);
     }
     
-    // Meta info
-    if (response.is_complaint || currentMode === 'defects') {
-        html += `<div class="message-meta">
-            <span class="complaint-badge">Работа с претензией</span>
-        </div>`;
-    }
+    // Рейтинг 0-5
+    html += renderRating(messageId);
     
     html += `</div>`;
     
@@ -276,7 +305,10 @@ function addBotResponse(response) {
     chatMessages.appendChild(messageDiv);
     scrollToBottom();
     
-    // Render math formulas
+    // Сохраняем последний message_id
+    lastMessageId = messageId;
+    
+    // KaTeX
     if (typeof renderMathInElement !== 'undefined') {
         renderMathInElement(messageDiv, {
             delimiters: [
@@ -288,73 +320,91 @@ function addBotResponse(response) {
     }
 }
 
-function formatMessageContent(content) {
-    if (!content) return '';
-    
-    let formatted = escapeHtml(content);
-    
-    // Markdown
-    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    formatted = formatted.replace(/__(.*?)__/g, '<strong>$1</strong>');
-    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    formatted = formatted.replace(/_(.*?)_/g, '<em>$1</em>');
-    formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>');
-    
-    // Paragraphs
-    const paragraphs = formatted.split(/\n\n+/);
-    formatted = paragraphs.map(p => {
-        // Bullet lists
-        if (p.match(/^[\s]*[-•*]\s/m)) {
-            const items = p.split(/\n/).filter(line => line.trim());
-            const listItems = items.map(item => {
-                const text = item.replace(/^[\s]*[-•*]\s*/, '');
-                return `<li>${text}</li>`;
-            }).join('');
-            return `<ul>${listItems}</ul>`;
-        }
-        
-        // Numbered lists
-        if (p.match(/^[\s]*\d+[.)]\s/m)) {
-            const items = p.split(/\n/).filter(line => line.trim());
-            const listItems = items.map(item => {
-                const text = item.replace(/^[\s]*\d+[.)]\s*/, '');
-                return `<li>${text}</li>`;
-            }).join('');
-            return `<ol>${listItems}</ol>`;
-        }
-        
-        return `<p>${p.replace(/\n/g, '<br>')}</p>`;
-    }).join('');
-    
-    return formatted;
+function renderRating(messageId) {
+    return `
+        <div class="rating-container">
+            <span class="rating-label">Оцените ответ:</span>
+            <div class="rating-buttons">
+                ${[0, 1, 2, 3, 4, 5].map(num => `
+                    <button class="rating-btn" 
+                            data-rating="${num}" 
+                            onclick="handleRatingClick(this, '${messageId}')"
+                            title="${getRatingTitle(num)}">
+                        ${num}
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+    `;
 }
 
-function renderSources(sources) {
-    let html = `<div class="sources"><h4>Источники</h4>`;
+function getRatingTitle(rating) {
+    const titles = {
+        0: 'Совсем не помог',
+        1: 'Очень плохо',
+        2: 'Плохо',
+        3: 'Удовлетворительно',
+        4: 'Хорошо',
+        5: 'Отлично!'
+    };
+    return titles[rating] || '';
+}
+
+function renderCollapsibleSources(sources) {
+    const sourcesId = 'sources_' + Date.now();
     
-    sources.forEach(source => {
+    let html = `
+        <div class="sources-container">
+            <button class="sources-toggle" onclick="toggleSources('${sourcesId}')">
+                <span class="toggle-icon">▶</span>
+                <span>📚 Источники (${sources.length})</span>
+            </button>
+            <div class="sources-content" id="${sourcesId}" style="display: none;">
+    `;
+    
+    sources.forEach((source, index) => {
         const docName = source.document_name || source.doc_name || source.source || 
-                        source.metadata?.source || source.title || 'Документ';
+                        source.metadata?.source || source.title || `Источник ${index + 1}`;
         const page = source.page_number || source.page || source.metadata?.page || '';
         const text = source.text || source.content || source.snippet || source.page_content || '';
+        const score = source.score || source.similarity || source.relevance || '';
         
         html += `
             <div class="source-item">
-                <strong>${escapeHtml(String(docName))}</strong>
-                ${page ? `<span> • стр. ${page}</span>` : ''}
-                ${text ? `<p>${escapeHtml(String(text).substring(0, 250))}${text.length > 250 ? '...' : ''}</p>` : ''}
+                <div class="source-header">
+                    <strong>${escapeHtml(String(docName))}</strong>
+                    ${page ? `<span class="source-page">стр. ${page}</span>` : ''}
+                    ${score ? `<span class="source-score">${(parseFloat(score) * 100).toFixed(0)}%</span>` : ''}
+                </div>
+                ${text ? `<p class="source-text">${escapeHtml(String(text).substring(0, 350))}${text.length > 350 ? '...' : ''}</p>` : ''}
             </div>
         `;
     });
     
-    html += `</div>`;
+    html += `</div></div>`;
     return html;
+}
+
+function toggleSources(sourcesId) {
+    const content = document.getElementById(sourcesId);
+    const toggle = content.previousElementSibling;
+    const icon = toggle.querySelector('.toggle-icon');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.textContent = '▼';
+        toggle.classList.add('expanded');
+    } else {
+        content.style.display = 'none';
+        icon.textContent = '▶';
+        toggle.classList.remove('expanded');
+    }
 }
 
 function renderImages(images) {
     let html = `
         <div class="message-images">
-            <div class="images-title">Изображения из документов</div>
+            <div class="images-title">📷 Изображения из документов</div>
             <div class="images-grid">
     `;
     
@@ -393,6 +443,37 @@ function renderEntities(entities) {
     return html;
 }
 
+function formatMessageContent(content) {
+    if (!content) return '';
+    
+    let formatted = escapeHtml(content);
+    
+    // Markdown
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    formatted = formatted.replace(/__(.*?)__/g, '<strong>$1</strong>');
+    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    formatted = formatted.replace(/_(.*?)_/g, '<em>$1</em>');
+    formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>');
+    
+    // Paragraphs
+    const paragraphs = formatted.split(/\n\n+/);
+    formatted = paragraphs.map(p => {
+        if (p.match(/^[\s]*[-•*]\s/m)) {
+            const items = p.split(/\n/).filter(line => line.trim());
+            const listItems = items.map(item => `<li>${item.replace(/^[\s]*[-•*]\s*/, '')}</li>`).join('');
+            return `<ul>${listItems}</ul>`;
+        }
+        if (p.match(/^[\s]*\d+[.)]\s/m)) {
+            const items = p.split(/\n/).filter(line => line.trim());
+            const listItems = items.map(item => `<li>${item.replace(/^[\s]*\d+[.)]\s*/, '')}</li>`).join('');
+            return `<ol>${listItems}</ol>`;
+        }
+        return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+    }).join('');
+    
+    return formatted;
+}
+
 function showTypingIndicator() {
     const chatMessages = document.getElementById('chat-messages');
     const id = 'typing-' + Date.now();
@@ -404,22 +485,19 @@ function showTypingIndicator() {
         <div class="message-avatar">🤖</div>
         <div class="message-content">
             <div class="typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
+                <span></span><span></span><span></span>
             </div>
         </div>
     `;
     
     chatMessages.appendChild(typingDiv);
     scrollToBottom();
-    
     return id;
 }
 
 function removeTypingIndicator(id) {
-    const element = document.getElementById(id);
-    if (element) element.remove();
+    const el = document.getElementById(id);
+    if (el) el.remove();
 }
 
 function updateExampleQuestions() {
@@ -427,7 +505,6 @@ function updateExampleQuestions() {
     if (!container) return;
     
     const examples = CONFIG.modes[currentMode].examples;
-    
     container.innerHTML = examples.map(q => 
         `<button class="example-question" onclick="askQuestion('${escapeHtml(q)}')">${escapeHtml(q)}</button>`
     ).join('');
@@ -450,9 +527,7 @@ function escapeHtml(text) {
 
 function scrollToBottom() {
     const chatMessages = document.getElementById('chat-messages');
-    if (chatMessages) {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+    if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 function autoResizeTextarea() {
@@ -464,7 +539,6 @@ function setLoading(loading) {
     isLoading = loading;
     const sendBtn = document.getElementById('send-btn');
     const chatInput = document.getElementById('chat-input');
-    
     if (sendBtn) sendBtn.disabled = loading;
     if (chatInput) chatInput.disabled = loading;
 }
@@ -478,7 +552,7 @@ function askQuestion(question) {
 }
 
 // ============================================================================
-// CHAT HISTORY (localStorage)
+// CHAT HISTORY
 // ============================================================================
 
 function saveChatMessage(userMessage, botResponse) {
@@ -487,7 +561,7 @@ function saveChatMessage(userMessage, botResponse) {
         timestamp: new Date().toISOString(),
         mode: currentMode,
         userMessage: userMessage,
-        botResponse: botResponse.answer || botResponse.response || botResponse.text || ''
+        botResponse: botResponse.answer || botResponse.response || ''
     };
     
     chatHistory.push(entry);
@@ -497,9 +571,7 @@ function saveChatMessage(userMessage, botResponse) {
         saved.push(entry);
         if (saved.length > 50) saved.shift();
         localStorage.setItem('vibropress_history', JSON.stringify(saved));
-    } catch (e) {
-        console.warn('localStorage error:', e);
-    }
+    } catch (e) {}
     
     updateChatHistoryUI();
 }
@@ -527,14 +599,13 @@ function updateChatHistoryUI() {
         const preview = entry.userMessage.substring(0, 50) + (entry.userMessage.length > 50 ? '...' : '');
         const date = new Date(entry.timestamp).toLocaleDateString('ru-RU');
         const time = new Date(entry.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-        const modeName = CONFIG.modes[entry.mode]?.name || entry.mode;
         
         html += `
             <div class="chat-history-item" onclick="loadChatEntry(${entry.id})">
                 <div class="chat-item-title">${escapeHtml(preview)}</div>
                 <div class="chat-item-meta">
                     <span>${date} ${time}</span>
-                    <span>${modeName}</span>
+                    <span>${CONFIG.modes[entry.mode]?.name || entry.mode}</span>
                 </div>
                 <button class="chat-item-delete" onclick="event.stopPropagation(); deleteChatEntry(${entry.id})">🗑️</button>
             </div>
@@ -555,23 +626,19 @@ function loadChatEntry(id) {
     
     addMessageToUI('user', entry.userMessage);
     addMessageToUI('bot', entry.botResponse);
-    
     toggleChatHistory();
 }
 
 function deleteChatEntry(id) {
     chatHistory = chatHistory.filter(e => e.id !== id);
-    
     try {
         localStorage.setItem('vibropress_history', JSON.stringify(chatHistory));
     } catch (e) {}
-    
     updateChatHistoryUI();
 }
 
 function clearHistory() {
-    if (!confirm('Очистить всю историю чатов?')) return;
-    
+    if (!confirm('Очистить всю историю?')) return;
     chatHistory = [];
     localStorage.removeItem('vibropress_history');
     updateChatHistoryUI();
@@ -579,7 +646,7 @@ function clearHistory() {
 
 function newChat() {
     sessionId = generateSessionId();
-    conversationMessages = [];
+    messageCounter = 0;
     
     const chatMessages = document.getElementById('chat-messages');
     if (chatMessages) {
@@ -588,26 +655,19 @@ function newChat() {
                 <div class="message-avatar">🤖</div>
                 <div class="message-content">
                     <p>Здравствуйте! Я <strong>VibroPress AI</strong> — ваш интеллектуальный помощник.</p>
-                    <p>Выберите режим работы выше и задайте вопрос. Я помогу найти информацию в базе знаний.</p>
+                    <p>Выберите режим работы и задайте вопрос.</p>
                 </div>
             </div>
         `;
     }
     
     const sidebar = document.getElementById('chat-history-sidebar');
-    if (sidebar && sidebar.classList.contains('open')) {
-        toggleChatHistory();
-    }
-    
-    console.log('🆕 Новый чат, session:', sessionId);
+    if (sidebar?.classList.contains('open')) toggleChatHistory();
 }
 
 function toggleChatHistory() {
-    const sidebar = document.getElementById('chat-history-sidebar');
-    const overlay = document.getElementById('chat-history-overlay');
-    
-    if (sidebar) sidebar.classList.toggle('open');
-    if (overlay) overlay.classList.toggle('active');
+    document.getElementById('chat-history-sidebar')?.classList.toggle('open');
+    document.getElementById('chat-history-overlay')?.classList.toggle('active');
 }
 
 // ============================================================================
@@ -617,7 +677,6 @@ function toggleChatHistory() {
 function openLightbox(imageSrc) {
     const lightbox = document.getElementById('image-lightbox');
     const lightboxImage = document.getElementById('lightbox-image');
-    
     if (lightbox && lightboxImage) {
         lightboxImage.src = imageSrc;
         lightbox.classList.add('active');
