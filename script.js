@@ -1,532 +1,576 @@
 // =============================================================================
-// API CONFIGURATION
+// VIBROPRESS AI - УЛУЧШЕННЫЙ FRONTEND SCRIPT
+// С поддержкой изображений, lightbox и улучшенного форматирования
 // =============================================================================
 
-const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:8000'
-    : 'https://vibropress-assistant-backend.onrender.com';
+const API_URL = 'https://vibropress-assistant-backend.onrender.com/api'; // Замените на ваш URL
 
-console.log('🔗 API URL:', API_URL);
-
-// =============================================================================
-// STORAGE & CHAT MANAGEMENT
-// =============================================================================
-
-class ChatManager {
-    constructor() {
-        this.currentChatId = null;
-        this.chats = this.loadChats();
-        this.ratings = this.loadRatings();
-        this.sessionId = this.getOrCreateSessionId();
+// Конфигурация режимов
+const MODES = {
+    gost: {
+        name: 'ГОСТ/СП',
+        icon: '📋',
+        examples: [
+            'Какие требования к истираемости тротуарной плитки?',
+            'Прочность бетона М300 по ГОСТ',
+            'Морозостойкость бордюрного камня'
+        ],
+        taskType: 'norm'
+    },
+    equipment: {
+        name: 'Оборудование',
+        icon: '⚙️',
+        examples: [
+            'Настройка вибростола для плитки',
+            'Режимы работы вибропресса',
+            'Диагностика неисправностей'
+        ],
+        taskType: 'equipment'
+    },
+    defects: {
+        name: 'Претензии',
+        icon: '🔍',
+        examples: [
+            'Почему плитка крошится?',
+            'Высолы на бетонных изделиях',
+            'Трещины в бордюрах - причины'
+        ],
+        taskType: 'defects'
+    },
+    recipes: {
+        name: 'Рецептуры',
+        icon: '🧪',
+        examples: [
+            'Состав бетона для тротуарной плитки',
+            'Водоцементное отношение для М400',
+            'Добавки для морозостойкости'
+        ],
+        taskType: 'recipes'
     }
-    
-    getOrCreateSessionId() {
-        let sessionId = localStorage.getItem('vibropress_session_id');
-        if (!sessionId) {
-            sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('vibropress_session_id', sessionId);
-        }
-        return sessionId;
-    }
-    
-    loadChats() {
-        try {
-            const saved = localStorage.getItem('vibropress_chats');
-            return saved ? JSON.parse(saved) : {};
-        } catch (e) {
-            console.error('Error loading chats:', e);
-            return {};
-        }
-    }
-    
-    saveChats() {
-        try {
-            localStorage.setItem('vibropress_chats', JSON.stringify(this.chats));
-        } catch (e) {
-            console.error('Error saving chats:', e);
-        }
-    }
-    
-    loadRatings() {
-        try {
-            const saved = localStorage.getItem('vibropress_ratings');
-            return saved ? JSON.parse(saved) : {};
-        } catch (e) {
-            console.error('Error loading ratings:', e);
-            return {};
-        }
-    }
-    
-    saveRatings() {
-        try {
-            localStorage.setItem('vibropress_ratings', JSON.stringify(this.ratings));
-        } catch (e) {
-            console.error('Error saving ratings:', e);
-        }
-    }
-    
-    createChat(title = null) {
-        const chatId = 'chat_' + Date.now();
-        const chat = {
-            id: chatId,
-            title: title || 'Новый чат',
-            created: new Date().toISOString(),
-            updated: new Date().toISOString(),
-            messages: []
-        };
-        this.chats[chatId] = chat;
-        this.currentChatId = chatId;
-        this.saveChats();
-        return chatId;
-    }
-    
-    addMessage(message) {
-        if (!this.currentChatId) {
-            this.createChat();
-        }
-        
-        const chat = this.chats[this.currentChatId];
-        chat.messages.push({
-            ...message,
-            timestamp: new Date().toISOString(),
-            messageId: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
-        });
-        
-        if (chat.messages.length === 1 && message.role === 'user') {
-            chat.title = message.content.substring(0, 50) + (message.content.length > 50 ? '...' : '');
-        }
-        
-        chat.updated = new Date().toISOString();
-        this.saveChats();
-    }
-    
-    rateMessage(messageId, rating) {
-        this.ratings[messageId] = {
-            rating: rating,
-            timestamp: new Date().toISOString(),
-            chatId: this.currentChatId
-        };
-        this.saveRatings();
-        this.sendRatingToServer(messageId, rating);
-    }
-    
-    async sendRatingToServer(messageId, rating) {
-        try {
-            await fetch(`${API_URL}/feedback`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message_id: messageId,
-                    rating: rating,
-                    session_id: this.sessionId,
-                    timestamp: new Date().toISOString()
-                })
-            });
-            console.log('✅ Рейтинг сохранён на сервере');
-        } catch (e) {
-            console.log('⚠️ Не удалось сохранить рейтинг на сервере:', e.message);
-        }
-    }
-    
-    clearCurrentChat() {
-        this.currentChatId = null;
-    }
-}
-
-const chatManager = new ChatManager();
-
-// =============================================================================
-// CHAT DEMO FUNCTIONALITY
-// =============================================================================
-
-const modeExamples = {
-    gost: [
-        "Требования к прочности B25 по ГОСТ 6665",
-        "Морозостойкость F200 - таблица",
-        "Водопоглощение бордюрного камня"
-    ],
-    equipment: [
-        "Настройка виброплощадки Hess 2500",
-        "Ошибка E12 на матрице Besser",
-        "Режим прессования для тротуарной плитки"
-    ],
-    defects: [
-        "Сколы на торцах блоков - причины",
-        "Шелушение поверхности после зимы",
-        "Трещины на бордюрном камне B25"
-    ],
-    recipes: [
-        "Состав для B30 F300 с низким В/Ц",
-        "Цветной бетон - добавки и пропорции",
-        "Оптимизация вибро-режима для ФБС"
-    ]
 };
 
-const modeNames = {
-    gost: "ГОСТ/СП",
-    equipment: "Оборудование",
-    defects: "Претензии",
-    recipes: "Рецептуры"
-};
+let currentMode = 'gost';
+let isLoading = false;
+let currentSessionId = null;
 
-let conversationHistory = [];
+// =============================================================================
+// ИНИЦИАЛИЗАЦИЯ
+// =============================================================================
 
-document.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        const mode = this.dataset.mode;
-        document.getElementById('current-mode').textContent = modeNames[mode];
-        updateExampleQuestions(mode);
-        addBotMessage(`Режим изменён на "${modeNames[mode]}". Можете задать вопрос!`);
-    });
+document.addEventListener('DOMContentLoaded', () => {
+    initModeButtons();
+    initChatInput();
+    initExampleQuestions();
+    initLightbox();
+    
+    // Создаем новую сессию
+    currentSessionId = generateSessionId();
 });
 
-function updateExampleQuestions(mode) {
-    const container = document.getElementById('example-questions');
-    container.innerHTML = '';
+function generateSessionId() {
+    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// =============================================================================
+// ПЕРЕКЛЮЧЕНИЕ РЕЖИМОВ
+// =============================================================================
+
+function initModeButtons() {
+    const modeButtons = document.querySelectorAll('.mode-btn');
     
-    modeExamples[mode].forEach(question => {
-        const btn = document.createElement('button');
-        btn.className = 'example-question';
-        btn.textContent = question;
+    modeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            document.getElementById('chat-input').value = question;
-            document.getElementById('chat-input').focus();
+            // Убираем active у всех
+            modeButtons.forEach(b => b.classList.remove('active'));
+            // Добавляем active к текущей
+            btn.classList.add('active');
+            
+            // Меняем режим
+            const mode = btn.dataset.mode;
+            currentMode = mode;
+            
+            // Обновляем UI
+            document.getElementById('current-mode').textContent = MODES[mode].name;
+            updateExampleQuestions();
         });
-        container.appendChild(btn);
     });
 }
 
-updateExampleQuestions('gost');
+function updateExampleQuestions() {
+    const container = document.getElementById('example-questions');
+    const examples = MODES[currentMode].examples;
+    
+    container.innerHTML = examples.map(q => 
+        `<button class="example-question" onclick="askQuestion('${q.replace(/'/g, "\\'")}')">
+            ${q}
+        </button>`
+    ).join('');
+}
 
-const chatInput = document.getElementById('chat-input');
-chatInput.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-});
+function initExampleQuestions() {
+    updateExampleQuestions();
+}
 
-const sendBtn = document.getElementById('send-btn');
-const chatMessages = document.getElementById('chat-messages');
+function askQuestion(question) {
+    const input = document.getElementById('chat-input');
+    input.value = question;
+    sendMessage();
+}
 
-function addUserMessage(text) {
+// =============================================================================
+// ОТПРАВКА СООБЩЕНИЙ
+// =============================================================================
+
+function initChatInput() {
+    const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    
+    // Автоматическое изменение высоты textarea
+    input.addEventListener('input', () => {
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 150) + 'px';
+    });
+    
+    // Enter для отправки (Shift+Enter для новой строки)
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    
+    sendBtn.addEventListener('click', sendMessage);
+}
+
+async function sendMessage() {
+    if (isLoading) return;
+    
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Добавляем сообщение пользователя
+    addMessage('user', message);
+    
+    // Очищаем input
+    input.value = '';
+    input.style.height = 'auto';
+    
+    // Показываем индикатор загрузки
+    isLoading = true;
+    updateSendButton(true);
+    const loadingId = addLoadingMessage();
+    
+    try {
+        // Отправляем запрос к API
+        const response = await fetch(`${API_URL}/chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                query: message,
+                task_type: MODES[currentMode].taskType,
+                session_id: currentSessionId
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Ошибка сервера');
+        }
+        
+        const data = await response.json();
+        
+        // Удаляем индикатор загрузки
+        removeMessage(loadingId);
+        
+        // Добавляем ответ бота
+        addBotResponse(data);
+        
+    } catch (error) {
+        console.error('Ошибка:', error);
+        removeMessage(loadingId);
+        addMessage('bot', 'Произошла ошибка. Попробуйте еще раз.');
+    } finally {
+        isLoading = false;
+        updateSendButton(false);
+    }
+}
+
+function updateSendButton(loading) {
+    const sendBtn = document.getElementById('send-btn');
+    const input = document.getElementById('chat-input');
+    
+    if (loading) {
+        sendBtn.disabled = true;
+        input.disabled = true;
+        sendBtn.innerHTML = `
+            <svg class="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity="0.25"/>
+                <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" opacity="0.75"/>
+            </svg>
+        `;
+    } else {
+        sendBtn.disabled = false;
+        input.disabled = false;
+        sendBtn.innerHTML = `
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        `;
+    }
+}
+
+// =============================================================================
+// ДОБАВЛЕНИЕ СООБЩЕНИЙ
+// =============================================================================
+
+function addMessage(type, text) {
+    const messagesContainer = document.getElementById('chat-messages');
+    const messageId = 'msg_' + Date.now();
+    
     const messageDiv = document.createElement('div');
-    messageDiv.className = 'message user-message';
-    messageDiv.innerHTML = `
-        <div class="message-avatar">👤</div>
-        <div class="message-content">
-            <p>${escapeHtml(text)}</p>
-        </div>
-    `;
-    chatMessages.appendChild(messageDiv);
+    messageDiv.className = `message ${type}-message`;
+    messageDiv.id = messageId;
+    
+    if (type === 'user') {
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                <p>${escapeHtml(text)}</p>
+            </div>
+            <div class="message-avatar">👤</div>
+        `;
+    } else {
+        messageDiv.innerHTML = `
+            <div class="message-avatar">🤖</div>
+            <div class="message-content">
+                <p>${escapeHtml(text)}</p>
+            </div>
+        `;
+    }
+    
+    messagesContainer.appendChild(messageDiv);
     scrollToBottom();
     
-    chatManager.addMessage({
-        role: 'user',
-        content: text
-    });
+    return messageId;
 }
 
-// =============================================================================
-// RATING SYSTEM
-// =============================================================================
-
-function createRatingButtons(messageId) {
-    const ratingDiv = document.createElement('div');
-    ratingDiv.className = 'rating-container';
+function addLoadingMessage() {
+    const messagesContainer = document.getElementById('chat-messages');
+    const messageId = 'loading_' + Date.now();
     
-    const label = document.createElement('span');
-    label.className = 'rating-label';
-    label.textContent = 'Оцените ответ:';
-    ratingDiv.appendChild(label);
-    
-    const buttonsDiv = document.createElement('div');
-    buttonsDiv.className = 'rating-buttons';
-    
-    for (let i = 0; i <= 5; i++) {
-        const btn = document.createElement('button');
-        btn.className = 'rating-btn';
-        btn.textContent = i;
-        btn.dataset.rating = i;
-        btn.dataset.messageId = messageId;
-        
-        btn.addEventListener('click', function() {
-            const rating = parseInt(this.dataset.rating);
-            const msgId = this.dataset.messageId;
-            
-            chatManager.rateMessage(msgId, rating);
-            
-            buttonsDiv.querySelectorAll('.rating-btn').forEach(b => {
-                b.classList.remove('selected');
-                if (parseInt(b.dataset.rating) <= rating) {
-                    b.classList.add('selected');
-                }
-            });
-            
-            label.textContent = `Спасибо за оценку! (${rating}/5)`;
-            label.style.color = '#10b981';
-            
-            console.log('📊 Rating submitted:', { messageId: msgId, rating, timestamp: new Date() });
-        });
-        
-        buttonsDiv.appendChild(btn);
-    }
-    
-    ratingDiv.appendChild(buttonsDiv);
-    return ratingDiv;
-}
-
-// =============================================================================
-// LATEX FORMULA CONVERSION
-// =============================================================================
-
-function convertMarkdownMathToLatex(text) {
-    // Конвертирует обратные кавычки с М в LaTeX формулы
-    // `25М`Па → $25$ МПа
-    text = text.replace(/`(\d+)М`\s?(Па|МПа)/gi, (match, num, unit) => {
-        return `$${num}$ ${unit}`;
-    });
-    
-    // \( ... \) уже LaTeX, оставляем как есть
-    // \frac{}{} тоже LaTeX
-    
-    // Конвертируем простые выражения в LaTeX если не в формуле
-    // n = 4 → $n = 4$
-    text = text.replace(/\b([a-zA-Z_]+)\s*=\s*(\d+)\b/g, (match, variable, value) => {
-        // Проверяем что не внутри уже существующей формулы
-        return `$${variable} = ${value}$`;
-    });
-    
-    return text;
-}
-
-// =============================================================================
-// SOURCE FORMATTING
-// =============================================================================
-
-function formatSourceName(title) {
-    return title.replace(/\.(pdf|PDF|docx|DOCX|txt|TXT)$/i, '');
-}
-
-function getSourceIcon(type) {
-    const icons = {
-        'gost': '📋',
-        'manual': '⚙️',
-        'presentation': '📊',
-        'book': '📚',
-        'other': '📄'
-    };
-    return icons[type] || '📄';
-}
-
-function extractGOSTInfo(title, section) {
-    const gostMatch = title.match(/(ГОСТ|СП|СНиП)[\s_-]*(\d+[\.\-]\d+)/i);
-    if (gostMatch) {
-        return {
-            type: gostMatch[1].toUpperCase(),
-            number: gostMatch[2],
-            isGOST: true
-        };
-    }
-    return { isGOST: false };
-}
-
-function extractPageInfo(contentPreview) {
-    const pageMatch = contentPreview.match(/стр\.?\s*(\d+)|страниц[аы]\s*(\d+)|page\s*(\d+)/i);
-    if (pageMatch) {
-        return pageMatch[1] || pageMatch[2] || pageMatch[3];
-    }
-    return null;
-}
-
-function createCompactSource(source) {
-    const formattedName = formatSourceName(source.title);
-    const gostInfo = extractGOSTInfo(source.title, source.section);
-    const icon = getSourceIcon(source.type);
-    const pageInfo = extractPageInfo(source.content_preview);
-    
-    const sourceDiv = document.createElement('div');
-    sourceDiv.className = 'source-item';
-    
-    const iconSpan = document.createElement('span');
-    iconSpan.className = 'source-icon';
-    iconSpan.textContent = icon;
-    
-    const infoDiv = document.createElement('div');
-    infoDiv.className = 'source-info';
-    
-    const titleDiv = document.createElement('div');
-    titleDiv.className = 'source-title';
-    titleDiv.textContent = formattedName;
-    
-    const metaDiv = document.createElement('div');
-    metaDiv.className = 'source-meta';
-    
-    if (gostInfo.isGOST) {
-        const gostSpan = document.createElement('span');
-        gostSpan.textContent = `${gostInfo.type} ${gostInfo.number}`;
-        metaDiv.appendChild(gostSpan);
-    }
-    
-    if (source.section) {
-        const sectionSpan = document.createElement('span');
-        sectionSpan.textContent = source.section.substring(0, 40) + (source.section.length > 40 ? '...' : '');
-        metaDiv.appendChild(sectionSpan);
-    }
-    
-    if (pageInfo) {
-        const pageSpan = document.createElement('span');
-        pageSpan.textContent = `стр. ${pageInfo}`;
-        metaDiv.appendChild(pageSpan);
-    }
-    
-    const previewDiv = document.createElement('div');
-    previewDiv.className = 'source-preview';
-    previewDiv.textContent = source.content_preview;
-    
-    if (source.entities && source.entities.length > 0) {
-        const entitiesDiv = document.createElement('div');
-        entitiesDiv.className = 'entities';
-        source.entities.slice(0, 5).forEach(entity => {
-            const tag = document.createElement('span');
-            tag.className = 'entity-tag';
-            tag.textContent = entity;
-            entitiesDiv.appendChild(tag);
-        });
-        previewDiv.appendChild(entitiesDiv);
-    }
-    
-    const expandBtn = document.createElement('button');
-    expandBtn.className = 'source-expand-btn';
-    expandBtn.setAttribute('aria-label', 'Показать детали');
-    expandBtn.addEventListener('click', () => {
-        sourceDiv.classList.toggle('expanded');
-    });
-    
-    infoDiv.appendChild(titleDiv);
-    infoDiv.appendChild(metaDiv);
-    infoDiv.appendChild(previewDiv);
-    
-    sourceDiv.appendChild(iconSpan);
-    sourceDiv.appendChild(infoDiv);
-    sourceDiv.appendChild(expandBtn);
-    
-    return sourceDiv;
-}
-
-function formatResponseText(text) {
-    // Конвертируем формулы
-    text = convertMarkdownMathToLatex(text);
-    
-    // НЕ форматируем температуры и размеры - они уже в LaTeX формате
-    // text = text.replace(/(\d+)°C/g, '<code>$1°C</code>');
-    // text = text.replace(/(\d+[,.]?\d*)\s?(mm|мм|м|см|km|км)/gi, '<code>$1$2</code>');
-    
-    return text;
-}
-
-function addBotMessage(text, sources = null, modelUsed = null, isComplaint = false, messageId = null) {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message bot-message';
-    
-    if (!messageId) {
-        messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    }
-    messageDiv.dataset.messageId = messageId;
-    
-    const formattedText = formatResponseText(escapeHtml(text));
-    
-    let messageHTML = `
+    messageDiv.id = messageId;
+    messageDiv.innerHTML = `
         <div class="message-avatar">🤖</div>
         <div class="message-content">
-            ${formattedText.split('\n').map(line => line.trim() ? `<p>${line}</p>` : '').join('')}
-    `;
-    
-    // УБРАЛИ отображение модели и complaint badge
-    // if (isComplaint || modelUsed) {
-    //     messageHTML += `<div class="message-meta">`;
-    //     if (isComplaint) {
-    //         messageHTML += `<span class="complaint-badge">⚠️ Претензия</span>`;
-    //     }
-    //     if (modelUsed) {
-    //         messageHTML += `<span class="model-badge">Модель: ${modelUsed}</span>`;
-    //     }
-    //     messageHTML += `</div>`;
-    // }
-    
-    messageHTML += `</div>`;
-    messageDiv.innerHTML = messageHTML;
-    
-    if (sources && sources.length > 0) {
-        const sourcesContainer = document.createElement('div');
-        sourcesContainer.className = 'sources';
-        
-        const sourcesTitle = document.createElement('h4');
-        sourcesTitle.textContent = '📚 Источники';
-        sourcesContainer.appendChild(sourcesTitle);
-        
-        sources.forEach(source => {
-            sourcesContainer.appendChild(createCompactSource(source));
-        });
-        
-        messageDiv.querySelector('.message-content').appendChild(sourcesContainer);
-    }
-    
-    const ratingButtons = createRatingButtons(messageId);
-    messageDiv.querySelector('.message-content').appendChild(ratingButtons);
-    
-    chatMessages.appendChild(messageDiv);
-    scrollToBottom();
-    
-    chatManager.addMessage({
-        role: 'assistant',
-        content: text,
-        sources: sources,
-        model_used: modelUsed,
-        is_complaint: isComplaint,
-        messageId: messageId
-    });
-    
-    // Рендерим LaTeX формулы
-    if (typeof renderMathInElement !== 'undefined') {
-        renderMathInElement(messageDiv, {
-            delimiters: [
-                {left: '$$', right: '$$', display: true},
-                {left: '$', right: '$', display: false},
-                {left: '\\(', right: '\\)', display: false},
-                {left: '\\[', right: '\\]', display: true}
-            ],
-            throwOnError: false
-        });
-    }
-}
-
-function showTypingIndicator() {
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'message bot-message';
-    typingDiv.id = 'typing-indicator';
-    typingDiv.innerHTML = `
-        <div class="message-avatar">🤖</div>
-        <div class="message-content typing-indicator">
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
+            <div class="loading-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
         </div>
     `;
-    chatMessages.appendChild(typingDiv);
+    
+    messagesContainer.appendChild(messageDiv);
     scrollToBottom();
+    
+    return messageId;
 }
 
-function removeTypingIndicator() {
-    const typingIndicator = document.getElementById('typing-indicator');
-    if (typingIndicator) {
-        typingIndicator.remove();
+function removeMessage(messageId) {
+    const message = document.getElementById(messageId);
+    if (message) {
+        message.remove();
     }
 }
 
-function scrollToBottom() {
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+function addBotResponse(data) {
+    const messagesContainer = document.getElementById('chat-messages');
+    const messageId = 'msg_' + Date.now();
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message bot-message';
+    messageDiv.id = messageId;
+    
+    // Форматируем текст ответа
+    const formattedAnswer = formatAnswer(data.answer);
+    
+    let html = `
+        <div class="message-avatar">🤖</div>
+        <div class="message-content">
+            ${formattedAnswer}
+    `;
+    
+    // НОВОЕ: Добавляем изображения если они есть
+    if (data.images && data.images.length > 0) {
+        html += renderImages(data.images);
+    }
+    
+    // Добавляем источники
+    if (data.context_used && data.context_used.length > 0) {
+        html += renderSources(data.context_used);
+    }
+    
+    // Добавляем метаданные
+    html += renderMetadata(data);
+    
+    html += `</div>`;
+    
+    messageDiv.innerHTML = html;
+    messagesContainer.appendChild(messageDiv);
+    scrollToBottom();
+    
+    // Инициализируем lightbox для изображений
+    initImageClickHandlers(messageDiv);
 }
+
+// =============================================================================
+// ФОРМАТИРОВАНИЕ ОТВЕТА
+// =============================================================================
+
+function formatAnswer(text) {
+    // Экранируем HTML
+    text = escapeHtml(text);
+    
+    // Форматируем жирный текст **текст**
+    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    
+    // Форматируем код `код`
+    text = text.replace(/`(.+?)`/g, '<code>$1</code>');
+    
+    // Форматируем заголовки ### Заголовок
+    text = text.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    text = text.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+    
+    // Форматируем списки
+    text = formatLists(text);
+    
+    // Форматируем таблицы
+    text = formatTables(text);
+    
+    // Форматируем параграфы
+    text = text.split('\n\n').map(p => {
+        if (p.trim() && !p.startsWith('<')) {
+            return `<p>${p.trim()}</p>`;
+        }
+        return p;
+    }).join('\n');
+    
+    return text;
+}
+
+function formatLists(text) {
+    // Нумерованные списки
+    text = text.replace(/^(\d+\.\s+.+)(\n\d+\.\s+.+)*/gm, (match) => {
+        const items = match.split('\n').map(item => {
+            const content = item.replace(/^\d+\.\s+/, '');
+            return `<li>${content}</li>`;
+        }).join('\n');
+        return `<ol>${items}</ol>`;
+    });
+    
+    // Маркированные списки
+    text = text.replace(/^(-|\*)\s+.+(\n(-|\*)\s+.+)*/gm, (match) => {
+        const items = match.split('\n').map(item => {
+            const content = item.replace(/^(-|\*)\s+/, '');
+            return `<li>${content}</li>`;
+        }).join('\n');
+        return `<ul>${items}</ul>`;
+    });
+    
+    return text;
+}
+
+function formatTables(text) {
+    // Простое форматирование таблиц в Markdown стиле
+    const tableRegex = /(\|.+\|[\s\n]*)+/g;
+    
+    text = text.replace(tableRegex, (match) => {
+        const rows = match.trim().split('\n').filter(row => !row.match(/^[\s|:-]+$/));
+        
+        if (rows.length < 2) return match;
+        
+        const headerRow = rows[0].split('|').filter(c => c.trim()).map(c => c.trim());
+        const dataRows = rows.slice(1).map(row => 
+            row.split('|').filter(c => c.trim()).map(c => c.trim())
+        );
+        
+        let table = '<table><thead><tr>';
+        headerRow.forEach(cell => {
+            table += `<th>${cell}</th>`;
+        });
+        table += '</tr></thead><tbody>';
+        
+        dataRows.forEach(row => {
+            table += '<tr>';
+            row.forEach(cell => {
+                table += `<td>${cell}</td>`;
+            });
+            table += '</tr>';
+        });
+        
+        table += '</tbody></table>';
+        return table;
+    });
+    
+    return text;
+}
+
+// =============================================================================
+// РЕНДЕРИНГ ИЗОБРАЖЕНИЙ
+// =============================================================================
+
+function renderImages(images) {
+    if (!images || images.length === 0) return '';
+    
+    let html = `
+        <div class="message-images">
+            <div class="images-title">Изображения из документации:</div>
+            <div class="images-grid">
+    `;
+    
+    images.forEach((img, index) => {
+        const imageData = img.image_data.startsWith('data:') 
+            ? img.image_data 
+            : `data:${img.image_type};base64,${img.image_data}`;
+        
+        html += `
+            <div class="image-card" data-image-index="${index}">
+                <div class="image-wrapper">
+                    <img src="${imageData}" alt="${img.caption || 'Изображение из документа'}" loading="lazy">
+                </div>
+                <div class="image-caption">
+                    ${img.caption ? `<div class="image-caption-text">${escapeHtml(img.caption)}</div>` : ''}
+                    <div class="image-meta">
+                        ${img.source ? `<span>📄 ${escapeHtml(img.source)}</span>` : ''}
+                        ${img.page_number ? `<span>📖 Стр. ${img.page_number}</span>` : ''}
+                        ${img.section ? `<span>📑 ${escapeHtml(img.section)}</span>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
+// =============================================================================
+// LIGHTBOX ДЛЯ ИЗОБРАЖЕНИЙ
+// =============================================================================
+
+function initLightbox() {
+    // Создаем lightbox элемент
+    const lightbox = document.createElement('div');
+    lightbox.className = 'image-lightbox';
+    lightbox.id = 'image-lightbox';
+    lightbox.innerHTML = `
+        <div class="lightbox-content">
+            <button class="lightbox-close" onclick="closeLightbox()">×</button>
+            <img src="" alt="Увеличенное изображение">
+        </div>
+    `;
+    document.body.appendChild(lightbox);
+    
+    // Закрытие по клику на фон
+    lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) {
+            closeLightbox();
+        }
+    });
+}
+
+function initImageClickHandlers(messageDiv) {
+    const imageCards = messageDiv.querySelectorAll('.image-card');
+    
+    imageCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const img = card.querySelector('img');
+            openLightbox(img.src);
+        });
+    });
+}
+
+function openLightbox(imageSrc) {
+    const lightbox = document.getElementById('image-lightbox');
+    const img = lightbox.querySelector('img');
+    
+    img.src = imageSrc;
+    lightbox.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    const lightbox = document.getElementById('image-lightbox');
+    lightbox.classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+// Закрытие по Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeLightbox();
+    }
+});
+
+// =============================================================================
+// РЕНДЕРИНГ ИСТОЧНИКОВ
+// =============================================================================
+
+function renderSources(sources) {
+    if (!sources || sources.length === 0) return '';
+    
+    let html = `
+        <div class="sources">
+            <h4>Использованные источники:</h4>
+    `;
+    
+    sources.slice(0, 3).forEach((source, index) => {
+        // Извлекаем первые 150 символов
+        const preview = source.length > 150 ? source.substring(0, 150) + '...' : source;
+        
+        html += `
+            <div class="source-item">
+                <strong>Источник ${index + 1}</strong>
+                <p>${escapeHtml(preview)}</p>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    return html;
+}
+
+// =============================================================================
+// РЕНДЕРИНГ МЕТАДАННЫХ
+// =============================================================================
+
+function renderMetadata(data) {
+    let html = '<div class="message-meta">';
+    
+    if (data.reasoning_effort_used === 'high') {
+        html += '<span class="complaint-badge">Режим претензии</span>';
+    }
+    
+    if (data.model_used) {
+        html += `<span class="model-badge">${data.model_used}</span>`;
+    }
+    
+    html += '</div>';
+    return html;
+}
+
+// =============================================================================
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// =============================================================================
 
 function escapeHtml(text) {
     const div = document.createElement('div');
@@ -534,228 +578,73 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// =============================================================================
-// API CALL FUNCTION
-// =============================================================================
-
-async function callAPI(userMessage) {
-    try {
-        conversationHistory.push({
-            role: 'user',
-            content: userMessage
-        });
-        
-        console.log('📤 Отправка запроса к API:', API_URL + '/chat');
-        
-        const response = await fetch(`${API_URL}/chat`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                messages: conversationHistory,
-                use_rag: true,
-                max_results: 5,
-                session_id: chatManager.sessionId
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('📥 Получен ответ от API:', data);
-        
-        conversationHistory.push({
-            role: 'assistant',
-            content: data.response
-        });
-        
-        return data;
-        
-    } catch (error) {
-        console.error('❌ Ошибка при вызове API:', error);
-        
-        return {
-            response: `⚠️ Не удалось подключиться к API. Ошибка: ${error.message}\n\nЭто может быть связано с:\n1. API ещё не задеплоен на Render\n2. Cold start (первый запрос после простоя занимает ~30-60 сек)\n3. Проблемы с сетью\n\nПопробуйте ещё раз через минуту.`,
-            sources: null,
-            model_used: 'demo',
-            is_complaint: false,
-            message_id: 'demo_' + Date.now()
-        };
-    }
+function scrollToBottom() {
+    const messagesContainer = document.getElementById('chat-messages');
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
-
-async function sendMessage() {
-    const text = chatInput.value.trim();
-    if (!text) return;
-    
-    chatInput.disabled = true;
-    sendBtn.disabled = true;
-    
-    addUserMessage(text);
-    
-    chatInput.value = '';
-    chatInput.style.height = 'auto';
-    
-    showTypingIndicator();
-    
-    try {
-        const apiResponse = await callAPI(text);
-        
-        removeTypingIndicator();
-        
-        addBotMessage(
-            apiResponse.response,
-            apiResponse.sources,
-            apiResponse.model_used,
-            apiResponse.is_complaint,
-            apiResponse.message_id
-        );
-        
-    } catch (error) {
-        console.error('Error:', error);
-        removeTypingIndicator();
-        addBotMessage('Извините, произошла ошибка. Пожалуйста, попробуйте ещё раз.');
-    } finally {
-        chatInput.disabled = false;
-        sendBtn.disabled = false;
-        chatInput.focus();
-    }
-}
-
-sendBtn.addEventListener('click', sendMessage);
-
-chatInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-    }
-});
-
-// =============================================================================
-// CHECK API STATUS
-// =============================================================================
-
-async function checkAPIStatus() {
-    try {
-        console.log('🔍 Проверка статуса API...');
-        const response = await fetch(`${API_URL}/health`, {
-            method: 'GET',
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            console.log('✅ API доступен:', data);
-            
-            const statusDot = document.querySelector('.status-dot');
-            if (statusDot) {
-                statusDot.style.backgroundColor = '#10b981';
-                statusDot.title = 'API подключен';
-            }
-        } else {
-            console.warn('⚠️ API вернул ошибку:', response.status);
-        }
-    } catch (error) {
-        console.warn('⚠️ API недоступен (возможно, холодный старт):', error.message);
-        
-        const statusDot = document.querySelector('.status-dot');
-        if (statusDot) {
-            statusDot.style.backgroundColor = '#f59e0b';
-            statusDot.title = 'API недоступен (холодный старт)';
-        }
-    }
-}
-
-// =============================================================================
-// CHAT MANAGEMENT
-// =============================================================================
 
 function newChat() {
-    chatMessages.innerHTML = `
+    const messagesContainer = document.getElementById('chat-messages');
+    messagesContainer.innerHTML = `
         <div class="message bot-message">
             <div class="message-avatar">🤖</div>
             <div class="message-content">
                 <p>Здравствуйте! Я VibroPress AI.</p>
-                <p>Выберите режим работы и задайте вопрос.</p>
+                <p>Выберите режим работы и задайте вопрос. Я помогу найти информацию в базе знаний.</p>
             </div>
         </div>
     `;
-    conversationHistory = [];
-    chatManager.clearCurrentChat();
+    currentSessionId = generateSessionId();
 }
 
 // =============================================================================
-// INIT
+// CSS ДЛЯ АНИМАЦИИ ЗАГРУЗКИ
 // =============================================================================
 
-document.addEventListener('DOMContentLoaded', () => {
-    checkAPIStatus();
-    
-    if (Object.keys(chatManager.chats).length === 0) {
-        chatManager.createChat('Первый чат');
+const style = document.createElement('style');
+style.textContent = `
+.loading-dots {
+    display: flex;
+    gap: 8px;
+    padding: 8px 0;
+}
+
+.loading-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--primary);
+    animation: bounce 1.4s infinite ease-in-out;
+}
+
+.loading-dots span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes bounce {
+    0%, 80%, 100% {
+        transform: scale(0);
     }
-    
-    console.log('💾 Loaded chats:', Object.keys(chatManager.chats).length);
-});
-
-window.chatManager = chatManager;
-
-// =============================================================================
-// NAVIGATION
-// =============================================================================
-
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const targetId = this.getAttribute('href');
-        if (targetId === '#bot') {
-            const demoSection = document.querySelector('#demo');
-            if (demoSection) {
-                const navbarHeight = document.querySelector('.navbar').offsetHeight;
-                window.scrollTo({
-                    top: demoSection.offsetTop - navbarHeight,
-                    behavior: 'smooth'
-                });
-            }
-            return;
-        }
-        const targetElement = document.querySelector(targetId);
-        if (targetElement) {
-            const navbarHeight = document.querySelector('.navbar').offsetHeight;
-            window.scrollTo({
-                top: targetElement.offsetTop - navbarHeight,
-                behavior: 'smooth'
-            });
-        }
-    });
-});
-
-const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
-const navMenu = document.querySelector('.nav-menu');
-
-if (mobileMenuToggle) {
-    mobileMenuToggle.addEventListener('click', () => {
-        navMenu.classList.toggle('active');
-        const spans = mobileMenuToggle.querySelectorAll('span');
-        if (navMenu.classList.contains('active')) {
-            spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
-            spans[1].style.opacity = '0';
-            spans[2].style.transform = 'rotate(-45deg) translate(7px, -6px)';
-        } else {
-            spans[0].style.transform = 'none';
-            spans[1].style.opacity = '1';
-            spans[2].style.transform = 'none';
-        }
-    });
-    
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', () => {
-            navMenu.classList.remove('active');
-            const spans = mobileMenuToggle.querySelectorAll('span');
-            spans.forEach(span => span.style.transform = 'none');
-            spans[1].style.opacity = '1';
-        });
-    });
+    40% {
+        transform: scale(1);
+    }
 }
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+`;
+document.head.appendChild(style);

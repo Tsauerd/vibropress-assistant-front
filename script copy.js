@@ -4,9 +4,136 @@
 
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:8000'
-    : 'https://vibropress-assistant-backend.onrender.com';  // ✅ ИСПРАВЛЕННЫЙ URL
+    : 'https://vibropress-assistant-backend.onrender.com';
 
 console.log('🔗 API URL:', API_URL);
+
+// =============================================================================
+// STORAGE & CHAT MANAGEMENT
+// =============================================================================
+
+class ChatManager {
+    constructor() {
+        this.currentChatId = null;
+        this.chats = this.loadChats();
+        this.ratings = this.loadRatings();
+        this.sessionId = this.getOrCreateSessionId();
+    }
+    
+    getOrCreateSessionId() {
+        let sessionId = localStorage.getItem('vibropress_session_id');
+        if (!sessionId) {
+            sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('vibropress_session_id', sessionId);
+        }
+        return sessionId;
+    }
+    
+    loadChats() {
+        try {
+            const saved = localStorage.getItem('vibropress_chats');
+            return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+            console.error('Error loading chats:', e);
+            return {};
+        }
+    }
+    
+    saveChats() {
+        try {
+            localStorage.setItem('vibropress_chats', JSON.stringify(this.chats));
+        } catch (e) {
+            console.error('Error saving chats:', e);
+        }
+    }
+    
+    loadRatings() {
+        try {
+            const saved = localStorage.getItem('vibropress_ratings');
+            return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+            console.error('Error loading ratings:', e);
+            return {};
+        }
+    }
+    
+    saveRatings() {
+        try {
+            localStorage.setItem('vibropress_ratings', JSON.stringify(this.ratings));
+        } catch (e) {
+            console.error('Error saving ratings:', e);
+        }
+    }
+    
+    createChat(title = null) {
+        const chatId = 'chat_' + Date.now();
+        const chat = {
+            id: chatId,
+            title: title || 'Новый чат',
+            created: new Date().toISOString(),
+            updated: new Date().toISOString(),
+            messages: []
+        };
+        this.chats[chatId] = chat;
+        this.currentChatId = chatId;
+        this.saveChats();
+        return chatId;
+    }
+    
+    addMessage(message) {
+        if (!this.currentChatId) {
+            this.createChat();
+        }
+        
+        const chat = this.chats[this.currentChatId];
+        chat.messages.push({
+            ...message,
+            timestamp: new Date().toISOString(),
+            messageId: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+        });
+        
+        if (chat.messages.length === 1 && message.role === 'user') {
+            chat.title = message.content.substring(0, 50) + (message.content.length > 50 ? '...' : '');
+        }
+        
+        chat.updated = new Date().toISOString();
+        this.saveChats();
+    }
+    
+    rateMessage(messageId, rating) {
+        this.ratings[messageId] = {
+            rating: rating,
+            timestamp: new Date().toISOString(),
+            chatId: this.currentChatId
+        };
+        this.saveRatings();
+        this.sendRatingToServer(messageId, rating);
+    }
+    
+    async sendRatingToServer(messageId, rating) {
+        try {
+            await fetch(`${API_URL}/feedback`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message_id: messageId,
+                    rating: rating,
+                    session_id: this.sessionId,
+                    timestamp: new Date().toISOString()
+                })
+            });
+            console.log('✅ Рейтинг сохранён на сервере');
+        } catch (e) {
+            console.log('⚠️ Не удалось сохранить рейтинг на сервере:', e.message);
+        }
+    }
+    
+    clearCurrentChat() {
+        this.currentChatId = null;
+    }
+}
+
+const chatManager = new ChatManager();
 
 // =============================================================================
 // CHAT DEMO FUNCTIONALITY
@@ -44,7 +171,6 @@ const modeNames = {
 
 let conversationHistory = [];
 
-// Mode switching
 document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -74,7 +200,6 @@ function updateExampleQuestions(mode) {
 
 updateExampleQuestions('gost');
 
-// Chat input auto-resize
 const chatInput = document.getElementById('chat-input');
 chatInput.addEventListener('input', function() {
     this.style.height = 'auto';
@@ -95,14 +220,91 @@ function addUserMessage(text) {
     `;
     chatMessages.appendChild(messageDiv);
     scrollToBottom();
+    
+    chatManager.addMessage({
+        role: 'user',
+        content: text
+    });
 }
 
 // =============================================================================
-// УЛУЧШЕННОЕ ФОРМАТИРОВАНИЕ ИСТОЧНИКОВ
+// RATING SYSTEM
+// =============================================================================
+
+function createRatingButtons(messageId) {
+    const ratingDiv = document.createElement('div');
+    ratingDiv.className = 'rating-container';
+    
+    const label = document.createElement('span');
+    label.className = 'rating-label';
+    label.textContent = 'Оцените ответ:';
+    ratingDiv.appendChild(label);
+    
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.className = 'rating-buttons';
+    
+    for (let i = 0; i <= 5; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'rating-btn';
+        btn.textContent = i;
+        btn.dataset.rating = i;
+        btn.dataset.messageId = messageId;
+        
+        btn.addEventListener('click', function() {
+            const rating = parseInt(this.dataset.rating);
+            const msgId = this.dataset.messageId;
+            
+            chatManager.rateMessage(msgId, rating);
+            
+            buttonsDiv.querySelectorAll('.rating-btn').forEach(b => {
+                b.classList.remove('selected');
+                if (parseInt(b.dataset.rating) <= rating) {
+                    b.classList.add('selected');
+                }
+            });
+            
+            label.textContent = `Спасибо за оценку! (${rating}/5)`;
+            label.style.color = '#10b981';
+            
+            console.log('📊 Rating submitted:', { messageId: msgId, rating, timestamp: new Date() });
+        });
+        
+        buttonsDiv.appendChild(btn);
+    }
+    
+    ratingDiv.appendChild(buttonsDiv);
+    return ratingDiv;
+}
+
+// =============================================================================
+// LATEX FORMULA CONVERSION
+// =============================================================================
+
+function convertMarkdownMathToLatex(text) {
+    // Конвертирует обратные кавычки с М в LaTeX формулы
+    // `25М`Па → $25$ МПа
+    text = text.replace(/`(\d+)М`\s?(Па|МПа)/gi, (match, num, unit) => {
+        return `$${num}$ ${unit}`;
+    });
+    
+    // \( ... \) уже LaTeX, оставляем как есть
+    // \frac{}{} тоже LaTeX
+    
+    // Конвертируем простые выражения в LaTeX если не в формуле
+    // n = 4 → $n = 4$
+    text = text.replace(/\b([a-zA-Z_]+)\s*=\s*(\d+)\b/g, (match, variable, value) => {
+        // Проверяем что не внутри уже существующей формулы
+        return `$${variable} = ${value}$`;
+    });
+    
+    return text;
+}
+
+// =============================================================================
+// SOURCE FORMATTING
 // =============================================================================
 
 function formatSourceName(title) {
-    // Убираем расширения файлов
     return title.replace(/\.(pdf|PDF|docx|DOCX|txt|TXT)$/i, '');
 }
 
@@ -118,7 +320,6 @@ function getSourceIcon(type) {
 }
 
 function extractGOSTInfo(title, section) {
-    // Извлекает номер ГОСТа и другую метаинформацию
     const gostMatch = title.match(/(ГОСТ|СП|СНиП)[\s_-]*(\d+[\.\-]\d+)/i);
     if (gostMatch) {
         return {
@@ -131,7 +332,6 @@ function extractGOSTInfo(title, section) {
 }
 
 function extractPageInfo(contentPreview) {
-    // Пытается извлечь номера страниц из текста
     const pageMatch = contentPreview.match(/стр\.?\s*(\d+)|страниц[аы]\s*(\d+)|page\s*(\d+)/i);
     if (pageMatch) {
         return pageMatch[1] || pageMatch[2] || pageMatch[3];
@@ -148,12 +348,10 @@ function createCompactSource(source) {
     const sourceDiv = document.createElement('div');
     sourceDiv.className = 'source-item';
     
-    // Иконка
     const iconSpan = document.createElement('span');
     iconSpan.className = 'source-icon';
     iconSpan.textContent = icon;
     
-    // Информация об источнике
     const infoDiv = document.createElement('div');
     infoDiv.className = 'source-info';
     
@@ -164,33 +362,28 @@ function createCompactSource(source) {
     const metaDiv = document.createElement('div');
     metaDiv.className = 'source-meta';
     
-    // Для ГОСТов показываем больше деталей
     if (gostInfo.isGOST) {
         const gostSpan = document.createElement('span');
         gostSpan.textContent = `${gostInfo.type} ${gostInfo.number}`;
         metaDiv.appendChild(gostSpan);
     }
     
-    // Раздел
     if (source.section) {
         const sectionSpan = document.createElement('span');
         sectionSpan.textContent = source.section.substring(0, 40) + (source.section.length > 40 ? '...' : '');
         metaDiv.appendChild(sectionSpan);
     }
     
-    // Страница (если есть)
     if (pageInfo) {
         const pageSpan = document.createElement('span');
         pageSpan.textContent = `стр. ${pageInfo}`;
         metaDiv.appendChild(pageSpan);
     }
     
-    // Превью (скрыто по умолчанию)
     const previewDiv = document.createElement('div');
     previewDiv.className = 'source-preview';
     previewDiv.textContent = source.content_preview;
     
-    // Теги сущностей
     if (source.entities && source.entities.length > 0) {
         const entitiesDiv = document.createElement('div');
         entitiesDiv.className = 'entities';
@@ -203,7 +396,6 @@ function createCompactSource(source) {
         previewDiv.appendChild(entitiesDiv);
     }
     
-    // Кнопка раскрытия
     const expandBtn = document.createElement('button');
     expandBtn.className = 'source-expand-btn';
     expandBtn.setAttribute('aria-label', 'Показать детали');
@@ -222,58 +414,49 @@ function createCompactSource(source) {
     return sourceDiv;
 }
 
-// =============================================================================
-// ФОРМАТИРОВАНИЕ ОТВЕТА С ПОДДЕРЖКОЙ ФОРМУЛ
-// =============================================================================
-
 function formatResponseText(text) {
-    // Форматирует текст: выделяет числа, температуры, размеры
+    // Конвертируем формулы
+    text = convertMarkdownMathToLatex(text);
     
-    // Температуры: 1000°C, 1200°C
-    text = text.replace(/(\d+)°C/g, '<code>$1°C</code>');
-    
-    // Размеры: 2,50mm, 3.5мм
-    text = text.replace(/(\d+[,.]?\d*)\s?(mm|мм|м|см|km|км)/gi, '<code>$1$2</code>');
-    
-    // Давления, прочности: B25, F200, M300
-    text = text.replace(/\b([BMFР])(\d+)\b/g, '<code>$1$2</code>');
-    
-    // Химические формулы и специальные обозначения
-    // Например: H2O, CO2
-    text = text.replace(/\b([A-Z][a-z]?\d+)\b/g, '<code>$1</code>');
+    // НЕ форматируем температуры и размеры - они уже в LaTeX формате
+    // text = text.replace(/(\d+)°C/g, '<code>$1°C</code>');
+    // text = text.replace(/(\d+[,.]?\d*)\s?(mm|мм|м|см|km|км)/gi, '<code>$1$2</code>');
     
     return text;
 }
 
-function addBotMessage(text, sources = null, modelUsed = null, isComplaint = false) {
+function addBotMessage(text, sources = null, modelUsed = null, isComplaint = false, messageId = null) {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message bot-message';
     
-    // Форматируем текст ответа
+    if (!messageId) {
+        messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    messageDiv.dataset.messageId = messageId;
+    
     const formattedText = formatResponseText(escapeHtml(text));
     
     let messageHTML = `
         <div class="message-avatar">🤖</div>
         <div class="message-content">
-            <p>${formattedText}</p>
+            ${formattedText.split('\n').map(line => line.trim() ? `<p>${line}</p>` : '').join('')}
     `;
     
-    // Метаданные (модель, претензия)
-    if (isComplaint || modelUsed) {
-        messageHTML += `<div class="message-meta">`;
-        if (isComplaint) {
-            messageHTML += `<span class="complaint-badge">⚠️ Претензия</span>`;
-        }
-        if (modelUsed) {
-            messageHTML += `<span class="model-badge">Модель: ${modelUsed}</span>`;
-        }
-        messageHTML += `</div>`;
-    }
+    // УБРАЛИ отображение модели и complaint badge
+    // if (isComplaint || modelUsed) {
+    //     messageHTML += `<div class="message-meta">`;
+    //     if (isComplaint) {
+    //         messageHTML += `<span class="complaint-badge">⚠️ Претензия</span>`;
+    //     }
+    //     if (modelUsed) {
+    //         messageHTML += `<span class="model-badge">Модель: ${modelUsed}</span>`;
+    //     }
+    //     messageHTML += `</div>`;
+    // }
     
     messageHTML += `</div>`;
     messageDiv.innerHTML = messageHTML;
     
-    // Добавляем источники (компактный формат)
     if (sources && sources.length > 0) {
         const sourcesContainer = document.createElement('div');
         sourcesContainer.className = 'sources';
@@ -289,8 +472,33 @@ function addBotMessage(text, sources = null, modelUsed = null, isComplaint = fal
         messageDiv.querySelector('.message-content').appendChild(sourcesContainer);
     }
     
+    const ratingButtons = createRatingButtons(messageId);
+    messageDiv.querySelector('.message-content').appendChild(ratingButtons);
+    
     chatMessages.appendChild(messageDiv);
     scrollToBottom();
+    
+    chatManager.addMessage({
+        role: 'assistant',
+        content: text,
+        sources: sources,
+        model_used: modelUsed,
+        is_complaint: isComplaint,
+        messageId: messageId
+    });
+    
+    // Рендерим LaTeX формулы
+    if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(messageDiv, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false},
+                {left: '\\(', right: '\\)', display: false},
+                {left: '\\[', right: '\\]', display: true}
+            ],
+            throwOnError: false
+        });
+    }
 }
 
 function showTypingIndicator() {
@@ -347,7 +555,8 @@ async function callAPI(userMessage) {
             body: JSON.stringify({
                 messages: conversationHistory,
                 use_rag: true,
-                max_results: 5
+                max_results: 5,
+                session_id: chatManager.sessionId
             })
         });
         
@@ -372,14 +581,11 @@ async function callAPI(userMessage) {
             response: `⚠️ Не удалось подключиться к API. Ошибка: ${error.message}\n\nЭто может быть связано с:\n1. API ещё не задеплоен на Render\n2. Cold start (первый запрос после простоя занимает ~30-60 сек)\n3. Проблемы с сетью\n\nПопробуйте ещё раз через минуту.`,
             sources: null,
             model_used: 'demo',
-            is_complaint: false
+            is_complaint: false,
+            message_id: 'demo_' + Date.now()
         };
     }
 }
-
-// =============================================================================
-// SEND MESSAGE FUNCTION
-// =============================================================================
 
 async function sendMessage() {
     const text = chatInput.value.trim();
@@ -404,7 +610,8 @@ async function sendMessage() {
             apiResponse.response,
             apiResponse.sources,
             apiResponse.model_used,
-            apiResponse.is_complaint
+            apiResponse.is_complaint,
+            apiResponse.message_id
         );
         
     } catch (error) {
@@ -428,7 +635,7 @@ chatInput.addEventListener('keydown', (e) => {
 });
 
 // =============================================================================
-// CHECK API STATUS ON LOAD
+// CHECK API STATUS
 // =============================================================================
 
 async function checkAPIStatus() {
@@ -461,40 +668,64 @@ async function checkAPIStatus() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    checkAPIStatus();
-});
+// =============================================================================
+// CHAT MANAGEMENT
+// =============================================================================
+
+function newChat() {
+    chatMessages.innerHTML = `
+        <div class="message bot-message">
+            <div class="message-avatar">🤖</div>
+            <div class="message-content">
+                <p>Здравствуйте! Я VibroPress AI.</p>
+                <p>Выберите режим работы и задайте вопрос.</p>
+            </div>
+        </div>
+    `;
+    conversationHistory = [];
+    chatManager.clearCurrentChat();
+}
 
 // =============================================================================
-// NAVIGATION & UI
+// INIT
+// =============================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    checkAPIStatus();
+    
+    if (Object.keys(chatManager.chats).length === 0) {
+        chatManager.createChat('Первый чат');
+    }
+    
+    console.log('💾 Loaded chats:', Object.keys(chatManager.chats).length);
+});
+
+window.chatManager = chatManager;
+
+// =============================================================================
+// NAVIGATION
 // =============================================================================
 
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
-        
         const targetId = this.getAttribute('href');
         if (targetId === '#bot') {
             const demoSection = document.querySelector('#demo');
             if (demoSection) {
                 const navbarHeight = document.querySelector('.navbar').offsetHeight;
-                const targetPosition = demoSection.offsetTop - navbarHeight;
-                
                 window.scrollTo({
-                    top: targetPosition,
+                    top: demoSection.offsetTop - navbarHeight,
                     behavior: 'smooth'
                 });
             }
             return;
         }
-        
         const targetElement = document.querySelector(targetId);
         if (targetElement) {
             const navbarHeight = document.querySelector('.navbar').offsetHeight;
-            const targetPosition = targetElement.offsetTop - navbarHeight;
-            
             window.scrollTo({
-                top: targetPosition,
+                top: targetElement.offsetTop - navbarHeight,
                 behavior: 'smooth'
             });
         }
@@ -507,7 +738,6 @@ const navMenu = document.querySelector('.nav-menu');
 if (mobileMenuToggle) {
     mobileMenuToggle.addEventListener('click', () => {
         navMenu.classList.toggle('active');
-        
         const spans = mobileMenuToggle.querySelectorAll('span');
         if (navMenu.classList.contains('active')) {
             spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
@@ -524,79 +754,8 @@ if (mobileMenuToggle) {
         link.addEventListener('click', () => {
             navMenu.classList.remove('active');
             const spans = mobileMenuToggle.querySelectorAll('span');
-            spans[0].style.transform = 'none';
+            spans.forEach(span => span.style.transform = 'none');
             spans[1].style.opacity = '1';
-            spans[2].style.transform = 'none';
         });
     });
 }
-
-const sections = document.querySelectorAll('section[id]');
-const navLinks = document.querySelectorAll('.nav-link');
-
-function highlightNavigation() {
-    const scrollPosition = window.scrollY + 100;
-    
-    sections.forEach(section => {
-        const sectionTop = section.offsetTop;
-        const sectionHeight = section.offsetHeight;
-        const sectionId = section.getAttribute('id');
-        
-        if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
-            navLinks.forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href') === `#${sectionId}`) {
-                    link.classList.add('active');
-                }
-            });
-        }
-    });
-}
-
-let scrollTimeout;
-window.addEventListener('scroll', () => {
-    if (scrollTimeout) {
-        window.cancelAnimationFrame(scrollTimeout);
-    }
-    
-    scrollTimeout = window.requestAnimationFrame(() => {
-        highlightNavigation();
-    });
-});
-
-const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -50px 0px'
-};
-
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
-        }
-    });
-}, observerOptions);
-
-document.addEventListener('DOMContentLoaded', () => {
-    const animatedElements = document.querySelectorAll('.feature-card, .step, .badge');
-    
-    animatedElements.forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(20px)';
-        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        observer.observe(el);
-    });
-});
-
-document.querySelectorAll('.feature-card').forEach(card => {
-    card.addEventListener('mouseenter', function() {
-        this.style.borderColor = getComputedStyle(document.documentElement)
-            .getPropertyValue('--primary-color');
-    });
-    
-    card.addEventListener('mouseleave', function() {
-        this.style.borderColor = getComputedStyle(document.documentElement)
-            .getPropertyValue('--border-color');
-    });
-});

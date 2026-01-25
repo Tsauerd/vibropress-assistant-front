@@ -1,1007 +1,520 @@
-/* Reset and Base Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* =============================================================================
+   VIBROPRESS AI - УЛУЧШЕННЫЕ СТИЛИ
+   Красивое оформление ответов, таблиц, изображений
+   ============================================================================= */
 
 :root {
-    --primary-color: #2563eb;
-    --primary-dark: #1e40af;
-    --text-dark: #1f2937;
-    --text-light: #6b7280;
-    --bg-light: #f9fafb;
-    --bg-white: #ffffff;
-    --border-color: #e5e7eb;
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-    color: var(--text-dark);
-    line-height: 1.6;
-    background-color: var(--bg-white);
-}
-
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
-/* Navigation */
-.navbar {
-    background: var(--bg-white);
-    border-bottom: 1px solid var(--border-color);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: var(--shadow);
-}
-
-.navbar .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 20px;
-}
-
-.nav-brand {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--primary-color);
-}
-
-.nav-menu {
-    display: flex;
-    list-style: none;
-    gap: 2rem;
-    align-items: center;
-}
-
-.nav-link {
-    text-decoration: none;
-    color: var(--text-dark);
-    font-weight: 500;
-    transition: color 0.3s;
-}
-
-.nav-link:hover,
-.nav-link.active {
-    color: var(--primary-color);
-}
-
-.mobile-menu-toggle {
-    display: none;
-    flex-direction: column;
-    gap: 4px;
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-
-.mobile-menu-toggle span {
-    width: 25px;
-    height: 3px;
-    background: var(--text-dark);
-    transition: all 0.3s;
-}
-
-/* Buttons */
-.btn-primary,
-.btn-secondary,
-.btn-primary-small {
-    display: inline-block;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: all 0.3s;
-    border: none;
-    cursor: pointer;
-}
-
-.btn-primary {
-    background: var(--primary-color);
-    color: white;
-}
-
-.btn-primary:hover {
-    background: var(--primary-dark);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-}
-
-.btn-secondary {
-    background: transparent;
-    color: var(--primary-color);
-    border: 2px solid var(--primary-color);
-}
-
-.btn-secondary:hover {
-    background: var(--primary-color);
-    color: white;
-}
-
-.btn-primary-small {
-    padding: 0.5rem 1rem;
-    background: var(--primary-color);
-    color: white;
-    font-size: 0.9rem;
-}
-
-.btn-primary-small:hover {
-    background: var(--primary-dark);
-}
-
-/* Hero Section */
-.hero {
-    padding: 6rem 0;
-    background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-white) 100%);
-}
-
-.hero-content {
-    text-align: center;
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.hero-title {
-    font-size: 3.5rem;
-    font-weight: 800;
-    margin-bottom: 1.5rem;
-    color: var(--text-dark);
-    line-height: 1.2;
-}
-
-.hero-subtitle {
-    font-size: 1.25rem;
-    color: var(--text-light);
-    margin-bottom: 2.5rem;
-    line-height: 1.8;
-}
-
-.hero-buttons {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-/* Demo Section */
-.demo-section {
-    padding: 5rem 0;
-    background: var(--bg-light);
-}
-
-.demo-subtitle {
-    text-align: center;
-    color: var(--text-light);
-    font-size: 1.1rem;
-    margin-bottom: 3rem;
-}
-
-.mode-switcher {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-}
-
-.mode-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 1rem 1.5rem;
-    background: var(--bg-white);
-    border: 2px solid var(--border-color);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s;
-    min-width: 140px;
-}
-
-.mode-btn:hover {
-    border-color: var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
-}
-
-.mode-btn.active {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-}
-
-.mode-icon {
-    font-size: 2rem;
-}
-
-.mode-name {
-    font-weight: 600;
-    font-size: 0.9rem;
-}
-
-.chat-container {
-    max-width: 900px;
-    margin: 0 auto;
-    background: var(--bg-white);
-    border-radius: 16px;
-    box-shadow: var(--shadow-lg);
-    overflow: hidden;
-}
-
-.chat-header {
-    padding: 1.25rem 1.5rem;
-    background: var(--bg-light);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.chat-status {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.status-dot {
-    width: 10px;
-    height: 10px;
-    background: #10b981;
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
-.status-text {
-    color: var(--text-light);
-    font-weight: 500;
-}
-
-#current-mode {
-    color: var(--primary-color);
-    font-weight: 600;
-}
-
-.chat-messages {
-    padding: 2rem 1.5rem;
-    min-height: 300px;
-    max-height: 500px;
-    overflow-y: auto;
-}
-
-.message {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    animation: slideIn 0.3s ease;
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.message-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    flex-shrink: 0;
-}
-
-.bot-message .message-avatar {
-    background: var(--bg-light);
-}
-
-.user-message {
-    flex-direction: row-reverse;
-}
-
-.user-message .message-avatar {
-    background: var(--primary-color);
-    color: white;
-}
-
-.message-content {
-    background: var(--bg-light);
-    padding: 1rem 1.25rem;
-    border-radius: 12px;
-    max-width: 70%;
-}
-
-.user-message .message-content {
-    background: var(--primary-color);
-    color: white;
-}
-
-.message-content p {
-    margin: 0;
-    line-height: 1.6;
-}
-
-.message-content p + p {
-    margin-top: 0.75rem;
-}
-
-.chat-input-wrapper {
-    border-top: 1px solid var(--border-color);
-    padding: 1.5rem;
-}
-
-.example-questions {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
-}
-
-.example-question {
-    padding: 0.5rem 1rem;
-    background: var(--bg-light);
-    border: 1px solid var(--border-color);
-    border-radius: 20px;
-    font-size: 0.85rem;
-    color: var(--text-light);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.example-question:hover {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-}
-
-.chat-input-container {
-    display: flex;
-    gap: 0.75rem;
-    align-items: flex-end;
-}
-
-.chat-input {
-    flex: 1;
-    padding: 0.875rem 1.25rem;
-    border: 2px solid var(--border-color);
-    border-radius: 12px;
-    font-family: inherit;
-    font-size: 1rem;
-    resize: none;
-    max-height: 120px;
-    transition: border-color 0.3s;
-}
-
-.chat-input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-}
-
-.send-btn {
-    width: 48px;
-    height: 48px;
-    background: var(--primary-color);
-    border: none;
-    border-radius: 12px;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s;
-    flex-shrink: 0;
-}
-
-.send-btn:hover {
-    background: var(--primary-dark);
-    transform: scale(1.05);
-}
-
-.send-btn:disabled {
-    background: var(--border-color);
-    cursor: not-allowed;
-    transform: none;
-}
-
-.typing-indicator {
-    display: flex;
-    gap: 0.5rem;
-    padding: 1rem 1.25rem;
-}
-
-.typing-dot {
-    width: 8px;
-    height: 8px;
-    background: var(--text-light);
-    border-radius: 50%;
-    animation: typing 1.4s infinite;
-}
-
-.typing-dot:nth-child(2) {
-    animation-delay: 0.2s;
-}
-
-.typing-dot:nth-child(3) {
-    animation-delay: 0.4s;
-}
-
-@keyframes typing {
-    0%, 60%, 100% {
-        transform: translateY(0);
-    }
-    30% {
-        transform: translateY(-10px);
-    }
-}
-
-/* Features Section */
-.features {
-    padding: 5rem 0;
-    background: var(--bg-white);
-}
-
-.section-title {
-    text-align: center;
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 3rem;
-    color: var(--text-dark);
-}
-
-.features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
-}
-
-.feature-card {
-    background: var(--bg-white);
-    padding: 2rem;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    transition: all 0.3s;
-}
-
-.feature-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-lg);
-}
-
-.feature-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-}
-
-.feature-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    color: var(--text-dark);
-}
-
-.feature-description {
-    color: var(--text-light);
-    line-height: 1.6;
-}
-
-/* How It Works Section */
-.how-it-works {
-    padding: 5rem 0;
-    background: var(--bg-light);
-}
-
-.steps {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 2rem;
-    flex-wrap: wrap;
-    margin-top: 3rem;
-}
-
-.step {
-    flex: 1;
-    min-width: 250px;
-    max-width: 300px;
-    text-align: center;
-}
-
-.step-number {
-    width: 60px;
-    height: 60px;
-    background: var(--primary-color);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0 auto 1.5rem;
-}
-
-.step-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    color: var(--text-dark);
-}
-
-.step-description {
-    color: var(--text-light);
-    line-height: 1.6;
-}
-
-.step-arrow {
-    font-size: 2rem;
-    color: var(--primary-color);
-    font-weight: 300;
-}
-
-/* For Whom Section */
-.for-whom {
-    padding: 5rem 0;
-    background: var(--bg-white);
-}
-
-.badges {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    flex-wrap: wrap;
-    margin-top: 3rem;
-}
-
-.badge {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem 2rem;
-    background: var(--bg-light);
-    border: 1px solid var(--border-color);
-    border-radius: 50px;
-    transition: all 0.3s;
-}
-
-.badge:hover {
-    background: var(--primary-color);
-    color: white;
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-lg);
-}
-
-.badge-icon {
-    font-size: 1.5rem;
-}
-
-.badge-text {
-    font-weight: 600;
-    font-size: 1.1rem;
-}
-
-/* CTA Section */
-.cta {
-    padding: 5rem 0;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-    text-align: center;
-    color: white;
-}
-
-.cta-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-}
-
-.cta-subtitle {
-    font-size: 1.25rem;
-    margin-bottom: 2rem;
-    opacity: 0.9;
-}
-
-.cta .btn-primary {
-    background: white;
-    color: var(--primary-color);
-}
-
-.cta .btn-primary:hover {
-    background: var(--bg-light);
-}
-
-/* Footer */
-.footer {
-    padding: 2rem 0;
-    background: var(--bg-light);
-    text-align: center;
-    border-top: 1px solid var(--border-color);
-}
-
-.footer-text {
-    color: var(--text-light);
-    margin-bottom: 0.5rem;
-}
-
-.footer-link {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.footer-link:hover {
-    text-decoration: underline;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .nav-menu {
-        display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: var(--bg-white);
-        flex-direction: column;
-        padding: 1rem;
-        box-shadow: var(--shadow-lg);
-    }
-
-    .nav-menu.active {
-        display: flex;
-    }
-
-    .mobile-menu-toggle {
-        display: flex;
-    }
-
-    .hero-title {
-        font-size: 2.5rem;
-    }
-
-    .hero-subtitle {
-        font-size: 1.1rem;
-    }
-
-    .section-title {
-        font-size: 2rem;
-    }
-
-    .features-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .steps {
-        flex-direction: column;
-    }
-
-    .step-arrow {
-        transform: rotate(90deg);
-    }
-
-    .badges {
-        gap: 1rem;
-    }
-
-    .badge {
-        padding: 0.75rem 1.5rem;
-    }
-
-    .cta-title {
-        font-size: 2rem;
-    }
-
-    .cta-subtitle {
-        font-size: 1.1rem;
-    }
-
-    .mode-switcher {
-        gap: 0.5rem;
-    }
-
-    .mode-btn {
-        min-width: 110px;
-        padding: 0.75rem 1rem;
-    }
-
-    .mode-icon {
-        font-size: 1.5rem;
-    }
-
-    .mode-name {
-        font-size: 0.8rem;
-    }
-
-    .chat-messages {
-        min-height: 250px;
-        max-height: 400px;
-    }
-
-    .message-content {
-        max-width: 85%;
-    }
-
-    .example-questions {
-        gap: 0.4rem;
-    }
-
-    .example-question {
-        font-size: 0.8rem;
-        padding: 0.4rem 0.8rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .hero-title {
-        font-size: 2rem;
-    }
-
-    .hero-buttons {
-        flex-direction: column;
-    }
-
-    .btn-primary,
-    .btn-secondary {
-        width: 100%;
-    }
-
-    .mode-btn {
-        min-width: 90px;
-        padding: 0.6rem 0.75rem;
-    }
-
-    .mode-name {
-        font-size: 0.75rem;
-    }
-
-    .message-content {
-        max-width: 90%;
-        font-size: 0.9rem;
-    }
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --secondary: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
 }
 
 /* =============================================================================
-   УЛУЧШЕННОЕ ОФОРМЛЕНИЕ ОТВЕТОВ И ИСТОЧНИКОВ
-   Добавь эти стили в конец styles.css
+   УЛУЧШЕННОЕ ОФОРМЛЕНИЕ СООБЩЕНИЙ
    ============================================================================= */
 
-/* Улучшенное оформление сообщений бота */
-.bot-message .message-content {
-    background: linear-gradient(to bottom, #f8f9fa, #ffffff);
-    border-left: 4px solid #3b82f6;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.bot-message .message-content p {
-    color: #1f2937;
+.message-content {
     font-size: 15px;
-    line-height: 1.8;
-    margin-bottom: 16px;
+    line-height: 1.7;
+    color: var(--gray-800);
 }
 
-.bot-message .message-content p:last-of-type {
+/* Параграфы с отступами */
+.message-content p {
+    margin-bottom: 14px;
+}
+
+.message-content p:last-child {
     margin-bottom: 0;
 }
 
-/* Нумерованные списки в ответах */
-.bot-message .message-content ol {
-    margin: 12px 0;
-    padding-left: 24px;
+/* Заголовки в ответах */
+.message-content h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 20px 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary);
 }
 
-.bot-message .message-content ol li {
-    margin: 8px 0;
-    line-height: 1.7;
-}
-
-.bot-message .message-content ol li strong {
-    color: #3b82f6;
+.message-content h4 {
+    font-size: 15px;
     font-weight: 600;
+    color: var(--gray-800);
+    margin: 16px 0 10px 0;
 }
 
-/* Маркированные списки */
-.bot-message .message-content ul {
-    margin: 12px 0;
-    padding-left: 24px;
-    list-style-type: disc;
+/* Списки с красивым оформлением */
+.message-content ul,
+.message-content ol {
+    margin: 14px 0;
+    padding-left: 0;
+    list-style: none;
 }
 
-.bot-message .message-content ul li {
-    margin: 6px 0;
+.message-content li {
+    position: relative;
+    padding-left: 28px;
+    margin-bottom: 10px;
     line-height: 1.6;
 }
 
-/* Выделение технических терминов */
-.bot-message .message-content strong {
-    color: #1e40af;
-    font-weight: 600;
-}
-
-/* Выделение температур, размеров, параметров */
-.bot-message .message-content code {
-    background: #e0e7ff;
-    color: #1e40af;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Consolas', 'Monaco', monospace;
+.message-content ul li:before {
+    content: "▸";
+    position: absolute;
+    left: 8px;
+    color: var(--primary);
+    font-weight: bold;
     font-size: 14px;
 }
 
-/* Компактные источники (только название и страницы) */
+.message-content ol {
+    counter-reset: item;
+}
+
+.message-content ol li {
+    counter-increment: item;
+}
+
+.message-content ol li:before {
+    content: counter(item) ".";
+    position: absolute;
+    left: 0;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* Жирный текст */
+.message-content strong {
+    color: var(--gray-900);
+    font-weight: 700;
+    background: linear-gradient(120deg, #fef3c7 0%, #fef3c7 100%);
+    background-repeat: no-repeat;
+    background-size: 100% 40%;
+    background-position: 0 85%;
+}
+
+/* Код и технические термины */
+.message-content code {
+    background: var(--gray-100);
+    color: var(--danger);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Блоки кода */
+.message-content pre {
+    background: var(--gray-900);
+    color: #f3f4f6;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    margin: 16px 0;
+    box-shadow: var(--shadow-md);
+}
+
+.message-content pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+    font-size: 13px;
+}
+
+/* =============================================================================
+   ТАБЛИЦЫ - КРАСИВОЕ ОФОРМЛЕНИЕ
+   ============================================================================= */
+
+.message-content table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 20px 0;
+    background: white;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+}
+
+.message-content thead {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+}
+
+.message-content th {
+    padding: 14px 16px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.message-content td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--gray-200);
+    font-size: 14px;
+}
+
+.message-content tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.message-content tbody tr {
+    transition: background 0.2s ease;
+}
+
+.message-content tbody tr:hover {
+    background: var(--gray-50);
+}
+
+/* Альтернативные строки */
+.message-content tbody tr:nth-child(even) {
+    background: #fafbfc;
+}
+
+.message-content tbody tr:nth-child(even):hover {
+    background: var(--gray-50);
+}
+
+/* =============================================================================
+   КАРТОЧКИ ДЛЯ ПАРАМЕТРОВ И ХАРАКТЕРИСТИК
+   ============================================================================= */
+
+.param-card {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-left: 4px solid var(--primary);
+    padding: 16px;
+    margin: 16px 0;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.param-card strong {
+    display: block;
+    color: var(--primary-dark);
+    font-size: 14px;
+    margin-bottom: 8px;
+    background: none;
+}
+
+.param-card p {
+    margin: 0;
+    color: var(--gray-700);
+    font-size: 14px;
+}
+
+/* Важные замечания */
+.note-box {
+    background: #fef3c7;
+    border-left: 4px solid var(--warning);
+    padding: 14px 16px;
+    margin: 16px 0;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.note-box::before {
+    content: "⚠️ Важно: ";
+    font-weight: 700;
+    color: var(--warning);
+}
+
+/* Примечания */
+.info-box {
+    background: #dbeafe;
+    border-left: 4px solid var(--primary);
+    padding: 14px 16px;
+    margin: 16px 0;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.info-box::before {
+    content: "ℹ️ Примечание: ";
+    font-weight: 700;
+    color: var(--primary);
+}
+
+/* =============================================================================
+   ИЗОБРАЖЕНИЯ ИЗ ДОКУМЕНТОВ
+   ============================================================================= */
+
+.message-images {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 2px solid var(--gray-200);
+}
+
+.images-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.images-title::before {
+    content: "🖼️";
+    font-size: 18px;
+}
+
+.images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.image-card {
+    background: white;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+}
+
+.image-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
+}
+
+.image-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 75%; /* 4:3 aspect ratio */
+    background: var(--gray-100);
+    overflow: hidden;
+}
+
+.image-wrapper img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+.image-card:hover .image-wrapper img {
+    transform: scale(1.05);
+}
+
+.image-caption {
+    padding: 12px;
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-200);
+}
+
+.image-caption-text {
+    font-size: 13px;
+    color: var(--gray-700);
+    margin-bottom: 6px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.image-meta {
+    display: flex;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--gray-500);
+}
+
+.image-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Увеличение изображения при клике */
+.image-lightbox {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.image-lightbox.active {
+    display: flex;
+}
+
+.lightbox-content {
+    max-width: 90%;
+    max-height: 90%;
+    position: relative;
+}
+
+.lightbox-content img {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-close {
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 40px;
+    height: 40px;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-lg);
+}
+
+.lightbox-close:hover {
+    background: var(--danger);
+    color: white;
+    transform: rotate(90deg);
+}
+
+/* =============================================================================
+   ИСТОЧНИКИ И МЕТАДАННЫЕ
+   ============================================================================= */
+
 .sources {
     margin-top: 20px;
     padding: 16px;
-    background: #f3f4f6;
-    border-radius: 10px;
-    border-left: 3px solid #10b981;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--secondary);
+    box-shadow: var(--shadow-sm);
 }
 
 .sources h4 {
     margin: 0 0 12px 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: #374151;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* КОМПАКТНЫЙ формат источника */
-.source-item {
-    margin-bottom: 8px;
-    padding: 10px 12px;
-    background: white;
-    border-radius: 6px;
-    border-left: 3px solid #3b82f6;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gray-900);
     display: flex;
     align-items: center;
-    gap: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    gap: 8px;
+}
+
+.sources h4::before {
+    content: "📚";
+    font-size: 18px;
+}
+
+.source-item {
+    margin-bottom: 12px;
+    padding: 12px;
+    background: white;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
+    border: 1px solid transparent;
 }
 
 .source-item:hover {
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    transform: translateX(2px);
+    border-color: var(--secondary);
+    transform: translateX(4px);
+    box-shadow: var(--shadow-md);
 }
 
 .source-item:last-child {
     margin-bottom: 0;
 }
 
-/* Иконка документа */
-.source-icon {
-    font-size: 18px;
-    width: 24px;
-    text-align: center;
-    flex-shrink: 0;
+.source-item strong {
+    color: var(--secondary);
+    font-size: 14px;
+    background: none;
 }
 
-/* Название и метаданные источника */
-.source-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.source-title {
-    color: #1f2937;
-    font-size: 13px;
-    font-weight: 600;
-    margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.source-meta {
-    color: #6b7280;
-    font-size: 11px;
-    margin-top: 2px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.source-meta span {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.source-meta span::before {
-    content: "•";
-    color: #9ca3af;
-}
-
-.source-meta span:first-child::before {
-    content: "";
-}
-
-/* Скрываем превью текста (показываем только по клику) */
-.source-preview {
-    display: none;
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #e5e7eb;
-    color: #4b5563;
+.source-item span {
+    color: var(--gray-600);
     font-size: 12px;
+}
+
+.source-item p {
+    margin: 10px 0 0 0;
+    color: var(--gray-700);
+    font-size: 13px;
     line-height: 1.5;
 }
 
-.source-item.expanded .source-preview {
-    display: block;
-}
-
-/* Кнопка раскрытия деталей */
-.source-expand-btn {
-    background: none;
-    border: none;
-    color: #3b82f6;
-    cursor: pointer;
-    font-size: 18px;
-    padding: 0;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
-
-.source-expand-btn:hover {
-    background: #eff6ff;
-}
-
-.source-expand-btn::after {
-    content: "›";
-    display: block;
-    transform: rotate(90deg);
-    transition: transform 0.2s ease;
-}
-
-.source-item.expanded .source-expand-btn::after {
-    transform: rotate(-90deg);
-}
-
-/* Теги сущностей (компактнее) */
+/* Теги сущностей */
 .entities {
-    margin-top: 6px;
+    margin-top: 10px;
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 6px;
 }
 
 .entity-tag {
-    display: inline-block;
-    padding: 2px 8px;
-    background: #dbeafe;
-    color: #1e40af;
-    border-radius: 10px;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.2px;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
 }
 
-/* Метаданные сообщения */
+.entity-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* =============================================================================
+   МЕТАДАННЫЕ СООБЩЕНИЯ
+   ============================================================================= */
+
 .message-meta {
     margin-top: 16px;
     padding-top: 12px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--gray-200);
     display: flex;
     gap: 10px;
     align-items: center;
@@ -1011,58 +524,96 @@ body {
 .complaint-badge {
     display: inline-flex;
     align-items: center;
-    padding: 4px 12px;
-    background: linear-gradient(135deg, #fef2f2, #fee2e2);
-    color: #dc2626;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-    border: 1px solid #fecaca;
-    box-shadow: 0 1px 3px rgba(220, 38, 38, 0.1);
+    gap: 6px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: var(--danger);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid #fca5a5;
+    box-shadow: var(--shadow-sm);
+}
+
+.complaint-badge::before {
+    content: "⚖️";
 }
 
 .model-badge {
     display: inline-flex;
     align-items: center;
-    padding: 4px 12px;
-    background: #f3f4f6;
-    color: #6b7280;
-    border-radius: 12px;
-    font-size: 10px;
-    font-weight: 500;
-    border: 1px solid #e5e7eb;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid var(--gray-300);
 }
 
-/* Поддержка LaTeX формул (через KaTeX) */
-.katex {
-    font-size: 1.1em;
+.model-badge::before {
+    content: "🤖";
 }
 
-.katex-display {
-    margin: 16px 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-}
+/* =============================================================================
+   RESPONSIVE
+   ============================================================================= */
 
-/* Улучшенная типографика для технических текстов */
-.message-content {
-    font-feature-settings: "kern" 1, "liga" 1;
-    text-rendering: optimizeLegibility;
-}
-
-/* Responsive adjustments */
 @media (max-width: 768px) {
-    .bot-message .message-content {
-        padding: 16px;
+    .images-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .lightbox-close {
+        top: 10px;
+        right: 10px;
+    }
+    
+    .message-content table {
+        font-size: 12px;
+    }
+    
+    .message-content th,
+    .message-content td {
+        padding: 10px 12px;
     }
     
     .source-item {
-        flex-direction: column;
-        align-items: flex-start;
+        padding: 10px;
     }
-    
-    .source-expand-btn {
-        align-self: flex-end;
-        margin-top: -24px;
+}
+
+/* =============================================================================
+   АНИМАЦИИ
+   ============================================================================= */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
     }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message {
+    animation: fadeInUp 0.4s ease;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
 }
