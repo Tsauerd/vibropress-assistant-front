@@ -3,6 +3,163 @@
    Красивое оформление ответов, таблиц, изображений
    ============================================================================= */
 
+   /* КРИТИЧНЫЕ БАЗОВЫЕ СТИЛИ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f9fafb;
+    color: #111827;
+}
+
+.message {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 16px;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.user-message {
+    flex-direction: row-reverse;
+    background: #eff6ff;
+}
+
+.bot-message {
+    background: white;
+}
+
+.message-avatar {
+    font-size: 32px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.message-content {
+    flex: 1;
+}
+
+.message-content p {
+    margin: 0 0 12px 0;
+    line-height: 1.6;
+}
+
+.message-content p:last-child {
+    margin-bottom: 0;
+}
+
+.message-content ul {
+    margin: 8px 0;
+    padding-left: 24px;
+}
+
+.message-content li {
+    margin-bottom: 6px;
+    line-height: 1.6;
+}
+
+.message-content strong {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.message-content code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.sources {
+    margin-top: 16px;
+    padding: 12px;
+    background: #f0f9ff;
+    border-radius: 8px;
+    border-left: 4px solid #3b82f6;
+}
+
+.sources h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.source-item {
+    margin-bottom: 10px;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+}
+
+.source-item strong {
+    color: #3b82f6;
+    font-size: 13px;
+}
+
+.source-item p {
+    margin: 6px 0 0 0;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+#chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+#chat-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    resize: none;
+    font-family: inherit;
+    font-size: 15px;
+}
+
+#send-btn {
+    padding: 12px 24px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#send-btn:hover {
+    background: #2563eb;
+}
+
+#send-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+.mode-btn {
+    padding: 10px 20px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mode-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
 :root {
     --primary: #3b82f6;
     --primary-dark: #2563eb;
