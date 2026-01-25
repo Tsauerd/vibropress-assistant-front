@@ -8,8 +8,11 @@
 // ============================================================================
 
 const CONFIG = {
-    // API URL - измените на ваш backend
+    // API URL - ваш backend на Render
     API_URL: 'https://vibropress-assistant-backend.onrender.com',
+    
+    // Правильный endpoint (из /docs)
+    CHAT_ENDPOINT: '/chat',
     
     // Режимы работы и примеры вопросов
     modes: {
@@ -67,6 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeInputHandlers();
     loadChatHistory();
     updateExampleQuestions();
+    
+    console.log('✅ VibroPress AI initialized');
+    console.log('API URL:', CONFIG.API_URL);
+    console.log('Chat endpoint:', CONFIG.CHAT_ENDPOINT);
 });
 
 function initializeChat() {
@@ -78,7 +85,6 @@ function initializeChat() {
         return;
     }
     
-    // Auto-resize textarea
     chatInput.addEventListener('input', autoResizeTextarea);
 }
 
@@ -87,16 +93,10 @@ function initializeModeButtons() {
     
     modeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            // Remove active from all
             modeButtons.forEach(b => b.classList.remove('active'));
-            // Add active to clicked
             btn.classList.add('active');
-            
-            // Update current mode
             currentMode = btn.dataset.mode;
             document.getElementById('current-mode').textContent = CONFIG.modes[currentMode].name;
-            
-            // Update example questions
             updateExampleQuestions();
         });
     });
@@ -106,10 +106,8 @@ function initializeInputHandlers() {
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
     
-    // Send on button click
     sendBtn.addEventListener('click', sendMessage);
     
-    // Send on Enter (but Shift+Enter for new line)
     chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -128,68 +126,110 @@ async function sendMessage() {
     
     if (!message || isLoading) return;
     
-    // Add user message to UI
     addMessageToUI('user', message);
-    
-    // Clear input
     chatInput.value = '';
     autoResizeTextarea.call(chatInput);
     
-    // Show loading
     setLoading(true);
     const loadingId = showTypingIndicator();
     
     try {
         const response = await sendToAPI(message);
-        
-        // Remove typing indicator
         removeTypingIndicator(loadingId);
-        
-        // Add bot response
         addBotResponse(response);
-        
-        // Save to history
         saveChatMessage(message, response);
         
     } catch (error) {
         console.error('API Error:', error);
         removeTypingIndicator(loadingId);
-        addMessageToUI('bot', `❌ Ошибка: ${error.message || 'Не удалось получить ответ'}. Попробуйте еще раз.`);
+        addMessageToUI('bot', `❌ Ошибка: ${error.message}\n\n💡 Проверьте консоль браузера (F12) для деталей.`);
     } finally {
         setLoading(false);
     }
 }
 
 async function sendToAPI(message) {
-    const endpoint = `${CONFIG.API_URL}/api/v1/chat`;
+    const url = `${CONFIG.API_URL}${CONFIG.CHAT_ENDPOINT}`;
     
-    const payload = {
-        messages: [
-            {
-                role: 'user',
-                content: message
-            }
-        ],
-        use_rag: true,
-        session_id: sessionId,
-        task_type: currentMode
-    };
-    
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+    // Пробуем разные форматы payload
+    const payloads = [
+        // Формат 1: query + session_id (наиболее вероятный)
+        {
+            query: message,
+            session_id: sessionId,
+            task_type: currentMode
         },
-        body: JSON.stringify(payload)
-    });
+        // Формат 2: message
+        {
+            message: message,
+            session_id: sessionId
+        },
+        // Формат 3: question
+        {
+            question: message,
+            session_id: sessionId
+        },
+        // Формат 4: text
+        {
+            text: message,
+            session_id: sessionId
+        },
+        // Формат 5: messages array (OpenAI style)
+        {
+            messages: [{ role: 'user', content: message }],
+            session_id: sessionId
+        }
+    ];
     
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+    let lastError = null;
+    
+    for (let i = 0; i < payloads.length; i++) {
+        const payload = payloads[i];
+        
+        try {
+            console.log(`🔄 Пробуем формат ${i + 1}:`, payload);
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            console.log(`Response status: ${response.status}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Успешный ответ:', data);
+                return data;
+            }
+            
+            // 422 = неправильный формат, пробуем следующий
+            if (response.status === 422) {
+                const errorData = await response.json().catch(() => ({}));
+                console.log(`❌ Формат ${i + 1} не подошёл (422):`, errorData);
+                lastError = new Error(`Неверный формат запроса: ${JSON.stringify(errorData)}`);
+                continue;
+            }
+            
+            // Другие ошибки
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+            
+        } catch (fetchError) {
+            console.log(`❌ Формат ${i + 1} ошибка:`, fetchError.message);
+            lastError = fetchError;
+            
+            // Если это не 422, прерываем цикл
+            if (!fetchError.message.includes('422') && !fetchError.message.includes('Неверный формат')) {
+                throw fetchError;
+            }
+        }
     }
     
-    return await response.json();
+    throw lastError || new Error('Не удалось отправить запрос');
 }
 
 // ============================================================================
@@ -221,32 +261,38 @@ function addBotResponse(response) {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message bot-message';
     
-    // Get the answer text
-    const answer = response.answer || response.response || response.content || 'Нет ответа';
+    // Пробуем разные поля для ответа
+    const answer = response.answer || response.response || response.content || 
+                   response.text || response.message || response.result || 
+                   (typeof response === 'string' ? response : JSON.stringify(response));
     
-    // Build HTML
     let html = `
         <div class="message-avatar">🤖</div>
         <div class="message-content">
             ${formatMessageContent(answer)}
     `;
     
-    // Add sources if available
+    // Sources
     if (response.sources && response.sources.length > 0) {
         html += renderSources(response.sources);
     }
     
-    // Add images if available
+    // Chunks (альтернативное название для sources)
+    if (response.chunks && response.chunks.length > 0) {
+        html += renderSources(response.chunks);
+    }
+    
+    // Images
     if (response.images && response.images.length > 0) {
         html += renderImages(response.images);
     }
     
-    // Add entities/tags if available
+    // Entities
     if (response.entities && response.entities.length > 0) {
         html += renderEntities(response.entities);
     }
     
-    // Add complaint badge if relevant
+    // Complaint badge
     if (response.is_complaint || currentMode === 'defects') {
         html += `<div class="message-meta">
             <span class="complaint-badge">Работа с претензией</span>
@@ -259,7 +305,7 @@ function addBotResponse(response) {
     chatMessages.appendChild(messageDiv);
     scrollToBottom();
     
-    // Re-render math if KaTeX is available
+    // KaTeX
     if (typeof renderMathInElement !== 'undefined') {
         renderMathInElement(messageDiv, {
             delimiters: [
@@ -274,25 +320,18 @@ function addBotResponse(response) {
 function formatMessageContent(content) {
     if (!content) return '';
     
-    // Escape HTML
     let formatted = escapeHtml(content);
     
-    // Convert markdown-style formatting
-    // Bold
+    // Markdown formatting
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     formatted = formatted.replace(/__(.*?)__/g, '<strong>$1</strong>');
-    
-    // Italic
     formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
     formatted = formatted.replace(/_(.*?)_/g, '<em>$1</em>');
-    
-    // Code
     formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>');
     
-    // Line breaks to paragraphs
+    // Paragraphs
     const paragraphs = formatted.split(/\n\n+/);
     formatted = paragraphs.map(p => {
-        // Check if it's a list
         if (p.match(/^[\s]*[-•*]\s/m)) {
             const items = p.split(/\n/).filter(line => line.trim());
             const listItems = items.map(item => {
@@ -302,7 +341,6 @@ function formatMessageContent(content) {
             return `<ul>${listItems}</ul>`;
         }
         
-        // Check if it's a numbered list
         if (p.match(/^[\s]*\d+[.)]\s/m)) {
             const items = p.split(/\n/).filter(line => line.trim());
             const listItems = items.map(item => {
@@ -319,21 +357,19 @@ function formatMessageContent(content) {
 }
 
 function renderSources(sources) {
-    let html = `
-        <div class="sources">
-            <h4>Источники</h4>
-    `;
+    let html = `<div class="sources"><h4>Источники</h4>`;
     
     sources.forEach(source => {
-        const docName = source.document_name || source.doc_name || source.source || 'Документ';
-        const page = source.page_number || source.page || '';
-        const text = source.text || source.content || source.snippet || '';
+        const docName = source.document_name || source.doc_name || source.source || 
+                        source.metadata?.source || source.title || 'Документ';
+        const page = source.page_number || source.page || source.metadata?.page || '';
+        const text = source.text || source.content || source.snippet || source.page_content || '';
         
         html += `
             <div class="source-item">
                 <strong>${escapeHtml(docName)}</strong>
-                ${page ? `<span>стр. ${page}</span>` : ''}
-                ${text ? `<p>${escapeHtml(text.substring(0, 200))}${text.length > 200 ? '...' : ''}</p>` : ''}
+                ${page ? `<span> • стр. ${page}</span>` : ''}
+                ${text ? `<p>${escapeHtml(text.substring(0, 250))}${text.length > 250 ? '...' : ''}</p>` : ''}
             </div>
         `;
     });
@@ -376,12 +412,10 @@ function renderImages(images) {
 
 function renderEntities(entities) {
     let html = `<div class="entities">`;
-    
     entities.forEach(entity => {
         const text = typeof entity === 'string' ? entity : entity.text || entity.name;
         html += `<span class="entity-tag">${escapeHtml(text)}</span>`;
     });
-    
     html += `</div>`;
     return html;
 }
@@ -412,9 +446,7 @@ function showTypingIndicator() {
 
 function removeTypingIndicator(id) {
     const element = document.getElementById(id);
-    if (element) {
-        element.remove();
-    }
+    if (element) element.remove();
 }
 
 function updateExampleQuestions() {
@@ -476,16 +508,14 @@ function saveChatMessage(userMessage, botResponse) {
         timestamp: new Date().toISOString(),
         mode: currentMode,
         userMessage: userMessage,
-        botResponse: botResponse.answer || botResponse.response || ''
+        botResponse: botResponse.answer || botResponse.response || botResponse.text || ''
     };
     
     chatHistory.push(entry);
     
-    // Save to localStorage
     try {
         const saved = JSON.parse(localStorage.getItem('vibropress_history') || '[]');
         saved.push(entry);
-        // Keep only last 50 messages
         if (saved.length > 50) saved.shift();
         localStorage.setItem('vibropress_history', JSON.stringify(saved));
     } catch (e) {
@@ -514,7 +544,6 @@ function updateChatHistoryUI() {
         return;
     }
     
-    // Group by date
     const grouped = {};
     chatHistory.forEach(entry => {
         const date = new Date(entry.timestamp).toLocaleDateString('ru-RU');
@@ -549,13 +578,11 @@ function loadChatEntry(id) {
     const entry = chatHistory.find(e => e.id === id);
     if (!entry) return;
     
-    // Switch mode if different
     if (entry.mode !== currentMode) {
         const btn = document.querySelector(`[data-mode="${entry.mode}"]`);
         if (btn) btn.click();
     }
     
-    // Add messages to chat
     addMessageToUI('user', entry.userMessage);
     addMessageToUI('bot', entry.botResponse);
     
@@ -583,10 +610,8 @@ function clearHistory() {
 }
 
 function newChat() {
-    // Generate new session
     sessionId = generateSessionId();
     
-    // Clear chat messages (keep welcome message)
     const chatMessages = document.getElementById('chat-messages');
     chatMessages.innerHTML = `
         <div class="message bot-message">
@@ -598,9 +623,8 @@ function newChat() {
         </div>
     `;
     
-    // Close sidebar if open
     const sidebar = document.getElementById('chat-history-sidebar');
-    if (sidebar.classList.contains('open')) {
+    if (sidebar && sidebar.classList.contains('open')) {
         toggleChatHistory();
     }
 }
@@ -609,8 +633,8 @@ function toggleChatHistory() {
     const sidebar = document.getElementById('chat-history-sidebar');
     const overlay = document.getElementById('chat-history-overlay');
     
-    sidebar.classList.toggle('open');
-    overlay.classList.toggle('active');
+    if (sidebar) sidebar.classList.toggle('open');
+    if (overlay) overlay.classList.toggle('active');
 }
 
 // ============================================================================
@@ -621,28 +645,25 @@ function openLightbox(imageSrc) {
     const lightbox = document.getElementById('image-lightbox');
     const lightboxImage = document.getElementById('lightbox-image');
     
-    lightboxImage.src = imageSrc;
-    lightbox.classList.add('active');
-    
-    // Close on escape
-    document.addEventListener('keydown', closeLightboxOnEscape);
+    if (lightbox && lightboxImage) {
+        lightboxImage.src = imageSrc;
+        lightbox.classList.add('active');
+        document.addEventListener('keydown', closeLightboxOnEscape);
+    }
 }
 
 function closeLightbox() {
     const lightbox = document.getElementById('image-lightbox');
-    lightbox.classList.remove('active');
-    document.removeEventListener('keydown', closeLightboxOnEscape);
+    if (lightbox) {
+        lightbox.classList.remove('active');
+        document.removeEventListener('keydown', closeLightboxOnEscape);
+    }
 }
 
 function closeLightboxOnEscape(e) {
-    if (e.key === 'Escape') {
-        closeLightbox();
-    }
+    if (e.key === 'Escape') closeLightbox();
 }
 
-// Close lightbox on background click
 document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('image-lightbox')) {
-        closeLightbox();
-    }
+    if (e.target.classList.contains('image-lightbox')) closeLightbox();
 });
