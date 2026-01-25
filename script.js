@@ -1,57 +1,23 @@
 // =============================================================================
-// VIBROPRESS AI - УЛУЧШЕННЫЙ FRONTEND SCRIPT
-// С поддержкой изображений, lightbox и улучшенного форматирования
+// VIBROPRESS AI - FRONTEND SCRIPT (ИСПРАВЛЕННЫЙ ПОД ВАШ API)
 // =============================================================================
 
-const API_URL = 'https://vibropress-assistant-backend.onrender.com'; // Замените на ваш URL
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8000'
+    : 'https://vibropress-assistant-backend.onrender.com';
 
-// Конфигурация режимов
-const MODES = {
-    gost: {
-        name: 'ГОСТ/СП',
-        icon: '📋',
-        examples: [
-            'Какие требования к истираемости тротуарной плитки?',
-            'Прочность бетона М300 по ГОСТ',
-            'Морозостойкость бордюрного камня'
-        ],
-        taskType: 'norm'
-    },
-    equipment: {
-        name: 'Оборудование',
-        icon: '⚙️',
-        examples: [
-            'Настройка вибростола для плитки',
-            'Режимы работы вибропресса',
-            'Диагностика неисправностей'
-        ],
-        taskType: 'equipment'
-    },
-    defects: {
-        name: 'Претензии',
-        icon: '🔍',
-        examples: [
-            'Почему плитка крошится?',
-            'Высолы на бетонных изделиях',
-            'Трещины в бордюрах - причины'
-        ],
-        taskType: 'defects'
-    },
-    recipes: {
-        name: 'Рецептуры',
-        icon: '🧪',
-        examples: [
-            'Состав бетона для тротуарной плитки',
-            'Водоцементное отношение для М400',
-            'Добавки для морозостойкости'
-        ],
-        taskType: 'recipes'
-    }
-};
+console.log('🔗 API URL:', API_URL);
 
-let currentMode = 'gost';
+let currentMode = 'norm';
 let isLoading = false;
-let currentSessionId = null;
+let sessionId = null;
+
+// Генерируем session_id
+function generateSessionId() {
+    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+sessionId = generateSessionId();
 
 // =============================================================================
 // ИНИЦИАЛИЗАЦИЯ
@@ -61,35 +27,62 @@ document.addEventListener('DOMContentLoaded', () => {
     initModeButtons();
     initChatInput();
     initExampleQuestions();
-    initLightbox();
-    
-    // Создаем новую сессию
-    currentSessionId = generateSessionId();
 });
 
-function generateSessionId() {
-    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-}
+// =============================================================================
+// РЕЖИМЫ РАБОТЫ
+// =============================================================================
 
-// =============================================================================
-// ПЕРЕКЛЮЧЕНИЕ РЕЖИМОВ
-// =============================================================================
+const MODES = {
+    norm: {
+        name: 'ГОСТ/СП',
+        taskType: 'norm',
+        examples: [
+            'Какие требования к истираемости тротуарной плитки?',
+            'Прочность бетона М300 по ГОСТ',
+            'Морозостойкость бордюрного камня'
+        ]
+    },
+    equipment: {
+        name: 'Оборудование',
+        taskType: 'equipment',
+        examples: [
+            'Настройка вибростола для плитки',
+            'Режимы работы вибропресса',
+            'Диагностика неисправностей'
+        ]
+    },
+    defects: {
+        name: 'Претензии',
+        taskType: 'defects',
+        examples: [
+            'Почему плитка крошится?',
+            'Высолы на бетонных изделиях',
+            'Трещины в бордюрах - причины'
+        ]
+    },
+    recipes: {
+        name: 'Рецептуры',
+        taskType: 'recipes',
+        examples: [
+            'Состав бетона для тротуарной плитки',
+            'Водоцементное отношение для М400',
+            'Добавки для морозостойкости'
+        ]
+    }
+};
 
 function initModeButtons() {
     const modeButtons = document.querySelectorAll('.mode-btn');
     
     modeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            // Убираем active у всех
             modeButtons.forEach(b => b.classList.remove('active'));
-            // Добавляем active к текущей
             btn.classList.add('active');
             
-            // Меняем режим
             const mode = btn.dataset.mode;
             currentMode = mode;
             
-            // Обновляем UI
             document.getElementById('current-mode').textContent = MODES[mode].name;
             updateExampleQuestions();
         });
@@ -100,11 +93,13 @@ function updateExampleQuestions() {
     const container = document.getElementById('example-questions');
     const examples = MODES[currentMode].examples;
     
-    container.innerHTML = examples.map(q => 
-        `<button class="example-question" onclick="askQuestion('${q.replace(/'/g, "\\'")}')">
-            ${q}
-        </button>`
-    ).join('');
+    if (container) {
+        container.innerHTML = examples.map(q => 
+            `<button class="example-question" onclick="askQuestion('${q.replace(/'/g, "\\'")}')">
+                ${q}
+            </button>`
+        ).join('');
+    }
 }
 
 function initExampleQuestions() {
@@ -125,21 +120,23 @@ function initChatInput() {
     const input = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
     
-    // Автоматическое изменение высоты textarea
-    input.addEventListener('input', () => {
-        input.style.height = 'auto';
-        input.style.height = Math.min(input.scrollHeight, 150) + 'px';
-    });
+    if (input) {
+        input.addEventListener('input', () => {
+            input.style.height = 'auto';
+            input.style.height = Math.min(input.scrollHeight, 150) + 'px';
+        });
+        
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    }
     
-    // Enter для отправки (Shift+Enter для новой строки)
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-    
-    sendBtn.addEventListener('click', sendMessage);
+    if (sendBtn) {
+        sendBtn.addEventListener('click', sendMessage);
+    }
 }
 
 async function sendMessage() {
@@ -163,24 +160,27 @@ async function sendMessage() {
     const loadingId = addLoadingMessage();
     
     try {
-        // Отправляем запрос к API
+        // ИСПРАВЛЕННЫЙ ФОРМАТ ЗАПРОСА
         const response = await fetch(`${API_URL}/chat`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                query: message,
-                task_type: MODES[currentMode].taskType,
-                session_id: currentSessionId
+                query: message,                           // ← ПРАВИЛЬНЫЙ ФОРМАТ
+                task_type: MODES[currentMode].taskType,   // ← norm/equipment/defects/recipes
+                session_id: sessionId
             })
         });
         
         if (!response.ok) {
-            throw new Error('Ошибка сервера');
+            const errorText = await response.text();
+            console.error('API Error:', response.status, errorText);
+            throw new Error(`Ошибка ${response.status}: ${errorText}`);
         }
         
         const data = await response.json();
+        console.log('📥 API Response:', data);
         
         // Удаляем индикатор загрузки
         removeMessage(loadingId);
@@ -189,9 +189,9 @@ async function sendMessage() {
         addBotResponse(data);
         
     } catch (error) {
-        console.error('Ошибка:', error);
+        console.error('❌ Error:', error);
         removeMessage(loadingId);
-        addMessage('bot', 'Произошла ошибка. Попробуйте еще раз.');
+        addMessage('bot', `⚠️ Произошла ошибка: ${error.message}\n\nВозможные причины:\n• API ещё загружается (холодный старт ~60 сек)\n• Проблемы с сетью\n• Неправильный формат запроса\n\nПопробуйте ещё раз через минуту.`);
     } finally {
         isLoading = false;
         updateSendButton(false);
@@ -208,7 +208,7 @@ function updateSendButton(loading) {
         sendBtn.innerHTML = `
             <svg class="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity="0.25"/>
-                <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" opacity="0.75"/>
+                <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" opacity="0.75"/>
             </svg>
         `;
     } else {
@@ -246,7 +246,7 @@ function addMessage(type, text) {
         messageDiv.innerHTML = `
             <div class="message-avatar">🤖</div>
             <div class="message-content">
-                <p>${escapeHtml(text)}</p>
+                ${formatText(text)}
             </div>
         `;
     }
@@ -290,49 +290,28 @@ function removeMessage(messageId) {
 
 function addBotResponse(data) {
     const messagesContainer = document.getElementById('chat-messages');
-    const messageId = 'msg_' + Date.now();
-    
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message bot-message';
-    messageDiv.id = messageId;
-    
-    // Форматируем текст ответа
-    const formattedAnswer = formatAnswer(data.answer);
     
     let html = `
         <div class="message-avatar">🤖</div>
         <div class="message-content">
-            ${formattedAnswer}
+            ${formatText(data.answer || data.response)}
     `;
     
-    // НОВОЕ: Добавляем изображения если они есть
-    if (data.images && data.images.length > 0) {
-        html += renderImages(data.images);
-    }
-    
-    // Добавляем источники
+    // Добавляем источники если есть
     if (data.context_used && data.context_used.length > 0) {
         html += renderSources(data.context_used);
     }
-    
-    // Добавляем метаданные
-    html += renderMetadata(data);
     
     html += `</div>`;
     
     messageDiv.innerHTML = html;
     messagesContainer.appendChild(messageDiv);
     scrollToBottom();
-    
-    // Инициализируем lightbox для изображений
-    initImageClickHandlers(messageDiv);
 }
 
-// =============================================================================
-// ФОРМАТИРОВАНИЕ ОТВЕТА
-// =============================================================================
-
-function formatAnswer(text) {
+function formatText(text) {
     // Экранируем HTML
     text = escapeHtml(text);
     
@@ -342,201 +321,33 @@ function formatAnswer(text) {
     // Форматируем код `код`
     text = text.replace(/`(.+?)`/g, '<code>$1</code>');
     
-    // Форматируем заголовки ### Заголовок
-    text = text.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-    text = text.replace(/^## (.+)$/gm, '<h3>$1</h3>');
-    
     // Форматируем списки
-    text = formatLists(text);
-    
-    // Форматируем таблицы
-    text = formatTables(text);
-    
-    // Форматируем параграфы
-    text = text.split('\n\n').map(p => {
-        if (p.trim() && !p.startsWith('<')) {
-            return `<p>${p.trim()}</p>`;
+    text = text.split('\n').map(line => {
+        if (line.trim().startsWith('- ') || line.trim().startsWith('• ')) {
+            return `<li>${line.trim().substring(2)}</li>`;
         }
-        return p;
+        if (line.trim()) {
+            return `<p>${line.trim()}</p>`;
+        }
+        return '';
     }).join('\n');
     
-    return text;
-}
-
-function formatLists(text) {
-    // Нумерованные списки
-    text = text.replace(/^(\d+\.\s+.+)(\n\d+\.\s+.+)*/gm, (match) => {
-        const items = match.split('\n').map(item => {
-            const content = item.replace(/^\d+\.\s+/, '');
-            return `<li>${content}</li>`;
-        }).join('\n');
-        return `<ol>${items}</ol>`;
-    });
-    
-    // Маркированные списки
-    text = text.replace(/^(-|\*)\s+.+(\n(-|\*)\s+.+)*/gm, (match) => {
-        const items = match.split('\n').map(item => {
-            const content = item.replace(/^(-|\*)\s+/, '');
-            return `<li>${content}</li>`;
-        }).join('\n');
-        return `<ul>${items}</ul>`;
-    });
+    // Оборачиваем списки в ul
+    text = text.replace(/(<li>.*?<\/li>\n?)+/gs, match => `<ul>${match}</ul>`);
     
     return text;
 }
-
-function formatTables(text) {
-    // Простое форматирование таблиц в Markdown стиле
-    const tableRegex = /(\|.+\|[\s\n]*)+/g;
-    
-    text = text.replace(tableRegex, (match) => {
-        const rows = match.trim().split('\n').filter(row => !row.match(/^[\s|:-]+$/));
-        
-        if (rows.length < 2) return match;
-        
-        const headerRow = rows[0].split('|').filter(c => c.trim()).map(c => c.trim());
-        const dataRows = rows.slice(1).map(row => 
-            row.split('|').filter(c => c.trim()).map(c => c.trim())
-        );
-        
-        let table = '<table><thead><tr>';
-        headerRow.forEach(cell => {
-            table += `<th>${cell}</th>`;
-        });
-        table += '</tr></thead><tbody>';
-        
-        dataRows.forEach(row => {
-            table += '<tr>';
-            row.forEach(cell => {
-                table += `<td>${cell}</td>`;
-            });
-            table += '</tr>';
-        });
-        
-        table += '</tbody></table>';
-        return table;
-    });
-    
-    return text;
-}
-
-// =============================================================================
-// РЕНДЕРИНГ ИЗОБРАЖЕНИЙ
-// =============================================================================
-
-function renderImages(images) {
-    if (!images || images.length === 0) return '';
-    
-    let html = `
-        <div class="message-images">
-            <div class="images-title">Изображения из документации:</div>
-            <div class="images-grid">
-    `;
-    
-    images.forEach((img, index) => {
-        const imageData = img.image_data.startsWith('data:') 
-            ? img.image_data 
-            : `data:${img.image_type};base64,${img.image_data}`;
-        
-        html += `
-            <div class="image-card" data-image-index="${index}">
-                <div class="image-wrapper">
-                    <img src="${imageData}" alt="${img.caption || 'Изображение из документа'}" loading="lazy">
-                </div>
-                <div class="image-caption">
-                    ${img.caption ? `<div class="image-caption-text">${escapeHtml(img.caption)}</div>` : ''}
-                    <div class="image-meta">
-                        ${img.source ? `<span>📄 ${escapeHtml(img.source)}</span>` : ''}
-                        ${img.page_number ? `<span>📖 Стр. ${img.page_number}</span>` : ''}
-                        ${img.section ? `<span>📑 ${escapeHtml(img.section)}</span>` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    html += `
-            </div>
-        </div>
-    `;
-    
-    return html;
-}
-
-// =============================================================================
-// LIGHTBOX ДЛЯ ИЗОБРАЖЕНИЙ
-// =============================================================================
-
-function initLightbox() {
-    // Создаем lightbox элемент
-    const lightbox = document.createElement('div');
-    lightbox.className = 'image-lightbox';
-    lightbox.id = 'image-lightbox';
-    lightbox.innerHTML = `
-        <div class="lightbox-content">
-            <button class="lightbox-close" onclick="closeLightbox()">×</button>
-            <img src="" alt="Увеличенное изображение">
-        </div>
-    `;
-    document.body.appendChild(lightbox);
-    
-    // Закрытие по клику на фон
-    lightbox.addEventListener('click', (e) => {
-        if (e.target === lightbox) {
-            closeLightbox();
-        }
-    });
-}
-
-function initImageClickHandlers(messageDiv) {
-    const imageCards = messageDiv.querySelectorAll('.image-card');
-    
-    imageCards.forEach(card => {
-        card.addEventListener('click', () => {
-            const img = card.querySelector('img');
-            openLightbox(img.src);
-        });
-    });
-}
-
-function openLightbox(imageSrc) {
-    const lightbox = document.getElementById('image-lightbox');
-    const img = lightbox.querySelector('img');
-    
-    img.src = imageSrc;
-    lightbox.classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeLightbox() {
-    const lightbox = document.getElementById('image-lightbox');
-    lightbox.classList.remove('active');
-    document.body.style.overflow = 'auto';
-}
-
-// Закрытие по Escape
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeLightbox();
-    }
-});
-
-// =============================================================================
-// РЕНДЕРИНГ ИСТОЧНИКОВ
-// =============================================================================
 
 function renderSources(sources) {
     if (!sources || sources.length === 0) return '';
     
     let html = `
         <div class="sources">
-            <h4>Использованные источники:</h4>
+            <h4>📚 Использованные источники:</h4>
     `;
     
     sources.slice(0, 3).forEach((source, index) => {
-        // Извлекаем первые 150 символов
         const preview = source.length > 150 ? source.substring(0, 150) + '...' : source;
-        
         html += `
             <div class="source-item">
                 <strong>Источник ${index + 1}</strong>
@@ -548,29 +359,6 @@ function renderSources(sources) {
     html += '</div>';
     return html;
 }
-
-// =============================================================================
-// РЕНДЕРИНГ МЕТАДАННЫХ
-// =============================================================================
-
-function renderMetadata(data) {
-    let html = '<div class="message-meta">';
-    
-    if (data.reasoning_effort_used === 'high') {
-        html += '<span class="complaint-badge">Режим претензии</span>';
-    }
-    
-    if (data.model_used) {
-        html += `<span class="model-badge">${data.model_used}</span>`;
-    }
-    
-    html += '</div>';
-    return html;
-}
-
-// =============================================================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-// =============================================================================
 
 function escapeHtml(text) {
     const div = document.createElement('div');
@@ -590,15 +378,15 @@ function newChat() {
             <div class="message-avatar">🤖</div>
             <div class="message-content">
                 <p>Здравствуйте! Я VibroPress AI.</p>
-                <p>Выберите режим работы и задайте вопрос. Я помогу найти информацию в базе знаний.</p>
+                <p>Выберите режим работы и задайте вопрос.</p>
             </div>
         </div>
     `;
-    currentSessionId = generateSessionId();
+    sessionId = generateSessionId();
 }
 
 // =============================================================================
-// CSS ДЛЯ АНИМАЦИИ ЗАГРУЗКИ
+// СТИЛИ ДЛЯ АНИМАЦИЙ
 // =============================================================================
 
 const style = document.createElement('style');
@@ -613,7 +401,7 @@ style.textContent = `
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--primary);
+    background: var(--primary, #3b82f6);
     animation: bounce 1.4s infinite ease-in-out;
 }
 
@@ -646,5 +434,22 @@ style.textContent = `
         transform: rotate(360deg);
     }
 }
+
+.message {
+    animation: fadeInUp 0.4s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 `;
 document.head.appendChild(style);
+
+console.log('✅ VibroPress AI initialized');
