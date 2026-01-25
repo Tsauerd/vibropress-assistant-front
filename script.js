@@ -3,7 +3,7 @@
 // С поддержкой изображений, lightbox и улучшенного форматирования
 // =============================================================================
 
-const API_URL = 'https://vibropress-assistant-backend.onrender.com/api'; // Замените на ваш URL
+const API_URL = 'https://vibropress-assistant-backend.onrender.com'; // Замените на ваш URL
 
 // Конфигурация режимов
 const MODES = {
