@@ -368,6 +368,7 @@ function renderCollapsibleSources(sources) {
         const page = source.page_number || source.page || source.metadata?.page || '';
         const text = source.text || source.content || source.snippet || source.page_content || '';
         const score = source.score || source.similarity || source.relevance || '';
+        const driveFileId = source.drive_file_id || source.file_id || '';
         
         html += `
             <div class="source-item">
@@ -375,6 +376,7 @@ function renderCollapsibleSources(sources) {
                     <strong>${escapeHtml(String(docName))}</strong>
                     ${page ? `<span class="source-page">стр. ${page}</span>` : ''}
                     ${score ? `<span class="source-score">${(parseFloat(score) * 100).toFixed(0)}%</span>` : ''}
+                    ${driveFileId ? `<button class="source-open-btn" onclick="openPdfPreview('${driveFileId}', '${escapeHtml(String(docName))}', ${page || 1})">📄 Открыть</button>` : ''}
                 </div>
                 ${text ? `<p class="source-text">${escapeHtml(String(text).substring(0, 350))}${text.length > 350 ? '...' : ''}</p>` : ''}
             </div>
@@ -698,4 +700,67 @@ function closeLightboxOnEscape(e) {
 
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('image-lightbox')) closeLightbox();
+});
+
+// ============================================================================
+// PDF PREVIEW MODAL
+// ============================================================================
+
+/**
+ * Открывает PDF в модальном окне
+ * @param {string} driveFileId - Google Drive file ID
+ * @param {string} docName - Название документа
+ * @param {number} page - Номер страницы
+ */
+function openPdfPreview(driveFileId, docName, page = 1) {
+    const modal = document.getElementById("pdf-modal");
+    const iframe = document.getElementById("pdf-iframe");
+    const title = document.getElementById("pdf-modal-title");
+    
+    if (!modal || !iframe || !title) {
+        console.error("PDF modal elements not found");
+        return;
+    }
+    
+    // Устанавливаем заголовок
+    title.textContent = docName;
+    
+    // Google Drive PDF viewer URL
+    const pdfUrl = `https://drive.google.com/file/d/${driveFileId}/preview`;
+    
+    // Загружаем PDF в iframe
+    iframe.src = pdfUrl;
+    
+    // Показываем модальное окно
+    modal.classList.add("active");
+    document.body.style.overflow = "hidden";
+    
+    console.log(`📄 Opening PDF: ${docName} (page ${page})`);
+}
+
+/**
+ * Закрывает модальное окно PDF
+ */
+function closePdfModal() {
+    const modal = document.getElementById("pdf-modal");
+    const iframe = document.getElementById("pdf-iframe");
+    
+    if (modal) {
+        modal.classList.remove("active");
+        document.body.style.overflow = "";
+    }
+    
+    if (iframe) {
+        iframe.src = "";
+    }
+}
+
+// Закрытие по Escape
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        const modal = document.getElementById("pdf-modal");
+        if (modal && modal.classList.contains("active")) {
+            closePdfModal();
+        }
+    }
 });

@@ -238,7 +238,7 @@
     <footer class="footer">
         <div class="container">
             <p class="footer-text">VibroPress AI — MVP версия</p>
-            <p class="footer-text">Обратная связь: <a href="https://t.me/yourusername" class="footer-link">Telegram</a> • <a href="mailto:contact@example.com" class="footer-link">Email</a></p>
+            <p class="footer-text">Обратная связь: <a href="https://t.me/yourusername" class="footer-link">Telegram</a> • <a href="/cdn-cgi/l/email-protection#cdaea2a3b9acaeb98da8b5aca0bda1a8e3aea2a0" class="footer-link">Email</a></p>
         </div>
     </footer>
 
@@ -247,6 +247,25 @@
         <div class="lightbox-content">
             <button class="lightbox-close" onclick="closeLightbox()">×</button>
             <img src="" alt="Увеличенное изображение" id="lightbox-image">
+        </div>
+    </div>
+
+    <!-- PDF Preview Modal -->
+    <div class="pdf-modal" id="pdf-modal">
+        <div class="pdf-modal-overlay" onclick="closePdfModal()"></div>
+        <div class="pdf-modal-content">
+            <div class="pdf-modal-header">
+                <h3 class="pdf-modal-title" id="pdf-modal-title">Документ</h3>
+                <button class="pdf-modal-close" onclick="closePdfModal()">×</button>
+            </div>
+            <div class="pdf-modal-body">
+                <iframe 
+                    id="pdf-iframe" 
+                    frameborder="0" 
+                    allowfullscreen
+                    allow="autoplay"
+                ></iframe>
+            </div>
         </div>
     </div>
 
@@ -269,6 +288,4 @@
     <!-- History Toggle Button -->
     <button class="chat-history-toggle" onclick="toggleChatHistory()">📜</button>
 
-    <script src="script.js"></script>
-</body>
-</html>
+    <script
