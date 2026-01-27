@@ -353,6 +353,9 @@ function getRatingTitle(rating) {
 function renderCollapsibleSources(sources) {
     const sourcesId = 'sources_' + Date.now();
     
+    // ID папки с ГОСТами (только эти файлы показываем с превью)
+    const ALLOWED_FOLDER_ID = '18GV0KaL4Wy_1AGAyhEpVpBorFpX5wesj';
+    
     let html = `
         <div class="sources-container">
             <button class="sources-toggle" onclick="toggleSources('${sourcesId}')">
@@ -373,10 +376,10 @@ function renderCollapsibleSources(sources) {
         const text = source.text || source.content || source.snippet || source.page_content || '';
         const score = source.score || source.similarity || source.relevance || '';
         const driveFileId = source.drive_file_id || source.file_id || '';
-        const docId = source.doc_id || source.document_id || '';
+        const folderParentId = source.folder_parent_id || source.parent_folder_id || '';
         
-        // Всегда показываем кнопку "Открыть" - fallback на поиск по названию
-        const canOpen = driveFileId || docName;
+        // Показываем кнопку "Открыть" ТОЛЬКО если файл из разрешённой папки
+        const canOpen = driveFileId && (folderParentId === ALLOWED_FOLDER_ID || !folderParentId);
         
         html += `
             <div class="source-item">
@@ -741,44 +744,21 @@ function openPdfPreview(driveFileId, docName, page = 1, originalFileName = '') {
     }
     
     // Устанавливаем заголовок (без расширения)
-    title.textContent = `${docName} (стр. ${page})`;
+    title.textContent = `${docName} — стр. ${page}`;
     
-    // Если есть drive_file_id - открываем с указанием страницы
+    // Если есть drive_file_id - показываем ОДНУ страницу через PDF.js
     if (driveFileId && driveFileId.trim() !== '') {
-        // Вариант 1: Google Drive с параметром page (не всегда работает)
-        // const pdfUrl = `https://drive.google.com/file/d/${driveFileId}/preview#page=${page}`;
+        // PDF.js viewer с Google Drive файлом
+        // Формат: viewer.html?file=URL#page=N
+        const googleDriveDirectUrl = `https://drive.google.com/uc?export=download&id=${driveFileId}`;
+        const pdfJsUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(googleDriveDirectUrl)}#page=${page}`;
         
-        // Вариант 2: Используем встроенный viewer с хешем страницы
-        const pdfUrl = `https://drive.google.com/file/d/${driveFileId}/preview`;
-        
-        iframe.src = pdfUrl;
+        iframe.src = pdfJsUrl;
         
         modal.classList.add("active");
         document.body.style.overflow = "hidden";
         
-        // Пытаемся прокрутить к нужной странице после загрузки (работает не всегда)
-        iframe.onload = () => {
-            try {
-                // Google Drive не даёт доступ к iframe содержимому из-за CORS
-                // Поэтому добавляем инструкцию для пользователя
-                if (page > 1) {
-                    const pageInfo = document.createElement('div');
-                    pageInfo.className = 'pdf-page-info';
-                    pageInfo.innerHTML = `
-                        <p>📄 Нужная страница: <strong>${page}</strong></p>
-                        <p style="font-size: 12px; color: #6b7280;">Используйте навигацию в просмотрщике для перехода</p>
-                    `;
-                    iframe.parentElement.insertBefore(pageInfo, iframe);
-                    
-                    // Убираем через 5 секунд
-                    setTimeout(() => pageInfo.remove(), 5000);
-                }
-            } catch (e) {
-                console.log('Cannot access iframe:', e);
-            }
-        };
-        
-        console.log(`📄 Opening PDF: ${docName} (target page: ${page})`);
+        console.log(`📄 Opening PDF page ${page}: ${docName}`);
         return;
     }
     
