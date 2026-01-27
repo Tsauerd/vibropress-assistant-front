@@ -741,17 +741,44 @@ function openPdfPreview(driveFileId, docName, page = 1, originalFileName = '') {
     }
     
     // Устанавливаем заголовок (без расширения)
-    title.textContent = docName;
+    title.textContent = `${docName} (стр. ${page})`;
     
-    // Если есть drive_file_id - открываем напрямую
+    // Если есть drive_file_id - открываем с указанием страницы
     if (driveFileId && driveFileId.trim() !== '') {
+        // Вариант 1: Google Drive с параметром page (не всегда работает)
+        // const pdfUrl = `https://drive.google.com/file/d/${driveFileId}/preview#page=${page}`;
+        
+        // Вариант 2: Используем встроенный viewer с хешем страницы
         const pdfUrl = `https://drive.google.com/file/d/${driveFileId}/preview`;
+        
         iframe.src = pdfUrl;
         
         modal.classList.add("active");
         document.body.style.overflow = "hidden";
         
-        console.log(`📄 Opening PDF by ID: ${docName} (page ${page})`);
+        // Пытаемся прокрутить к нужной странице после загрузки (работает не всегда)
+        iframe.onload = () => {
+            try {
+                // Google Drive не даёт доступ к iframe содержимому из-за CORS
+                // Поэтому добавляем инструкцию для пользователя
+                if (page > 1) {
+                    const pageInfo = document.createElement('div');
+                    pageInfo.className = 'pdf-page-info';
+                    pageInfo.innerHTML = `
+                        <p>📄 Нужная страница: <strong>${page}</strong></p>
+                        <p style="font-size: 12px; color: #6b7280;">Используйте навигацию в просмотрщике для перехода</p>
+                    `;
+                    iframe.parentElement.insertBefore(pageInfo, iframe);
+                    
+                    // Убираем через 5 секунд
+                    setTimeout(() => pageInfo.remove(), 5000);
+                }
+            } catch (e) {
+                console.log('Cannot access iframe:', e);
+            }
+        };
+        
+        console.log(`📄 Opening PDF: ${docName} (target page: ${page})`);
         return;
     }
     

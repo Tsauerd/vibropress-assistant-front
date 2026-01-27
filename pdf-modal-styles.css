@@ -264,3 +264,35 @@
 .pdf-error .btn-primary-small {
     margin-top: 16px;
 }
+
+/* Уведомление о номере страницы */
+.pdf-page-info {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(102, 126, 234, 0.95);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    text-align: center;
+    animation: slideDown 0.3s ease;
+}
+
+.pdf-page-info p {
+    margin: 4px 0;
+    color: white !important;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
