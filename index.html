@@ -13,6 +13,7 @@
     
     <!-- Main Styles -->
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="pdf-modal-styles.css">
     
     <!-- KaTeX для математических формул -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
@@ -238,7 +239,7 @@
     <footer class="footer">
         <div class="container">
             <p class="footer-text">VibroPress AI — MVP версия</p>
-            <p class="footer-text">Обратная связь: <a href="https://t.me/yourusername" class="footer-link">Telegram</a> • <a href="/cdn-cgi/l/email-protection#cdaea2a3b9acaeb98da8b5aca0bda1a8e3aea2a0" class="footer-link">Email</a></p>
+            <p class="footer-text">Обратная связь: <a href="https://t.me/yourusername" class="footer-link">Telegram</a> • <a href="mailto:contact@example.com" class="footer-link">Email</a></p>
         </div>
     </footer>
 
@@ -288,4 +289,7 @@
     <!-- History Toggle Button -->
     <button class="chat-history-toggle" onclick="toggleChatHistory()">📜</button>
 
-    <script
+    <!-- Main Script with cache busting -->
+    <script src="script.js?v=3"></script>
+</body>
+</html>
