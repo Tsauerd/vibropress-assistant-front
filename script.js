@@ -811,8 +811,6 @@ function openPdfPreview(driveFileId, docName, page = 1, originalFileName = '') {
         `;
     });
 }
-    console.log(`📄 Opening PDF: ${docName} (page ${page})`);
-}
 
 /**
  * Закрывает модальное окно PDF
