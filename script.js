@@ -363,20 +363,28 @@ function renderCollapsibleSources(sources) {
     `;
     
     sources.forEach((source, index) => {
-        const docName = source.document_name || source.doc_name || source.source || 
+        let docName = source.document_name || source.doc_name || source.source || 
                         source.metadata?.source || source.title || `Источник ${index + 1}`;
+        
+        // Убираем расширения файлов (.pdf, .PDF, .doc, .docx и т.д.)
+        const docNameClean = String(docName).replace(/\.(pdf|PDF|doc|docx|DOCX|xls|xlsx|ppt|pptx)$/i, '');
+        
         const page = source.page_number || source.page || source.metadata?.page || '';
         const text = source.text || source.content || source.snippet || source.page_content || '';
         const score = source.score || source.similarity || source.relevance || '';
         const driveFileId = source.drive_file_id || source.file_id || '';
+        const docId = source.doc_id || source.document_id || '';
+        
+        // Всегда показываем кнопку "Открыть" - fallback на поиск по названию
+        const canOpen = driveFileId || docName;
         
         html += `
             <div class="source-item">
                 <div class="source-header">
-                    <strong>${escapeHtml(String(docName))}</strong>
+                    <strong>${escapeHtml(docNameClean)}</strong>
                     ${page ? `<span class="source-page">стр. ${page}</span>` : ''}
                     ${score ? `<span class="source-score">${(parseFloat(score) * 100).toFixed(0)}%</span>` : ''}
-                    ${driveFileId ? `<button class="source-open-btn" onclick="openPdfPreview('${driveFileId}', '${escapeHtml(String(docName))}', ${page || 1})">📄 Открыть</button>` : ''}
+                    ${canOpen ? `<button class="source-open-btn" onclick="openPdfPreview('${driveFileId || ''}', '${escapeHtml(docNameClean)}', ${page || 1}, '${escapeHtml(String(docName))}')">📄 Открыть</button>` : ''}
                 </div>
                 ${text ? `<p class="source-text">${escapeHtml(String(text).substring(0, 350))}${text.length > 350 ? '...' : ''}</p>` : ''}
             </div>
@@ -708,11 +716,12 @@ document.addEventListener('click', (e) => {
 
 /**
  * Открывает PDF в модальном окне
- * @param {string} driveFileId - Google Drive file ID
- * @param {string} docName - Название документа
+ * @param {string} driveFileId - Google Drive file ID (может быть пустым)
+ * @param {string} docName - Название документа (без расширения)
  * @param {number} page - Номер страницы
+ * @param {string} originalFileName - Оригинальное имя файла с расширением
  */
-function openPdfPreview(driveFileId, docName, page = 1) {
+function openPdfPreview(driveFileId, docName, page = 1, originalFileName = '') {
     const modal = document.getElementById("pdf-modal");
     const iframe = document.getElementById("pdf-iframe");
     const title = document.getElementById("pdf-modal-title");
@@ -722,19 +731,77 @@ function openPdfPreview(driveFileId, docName, page = 1) {
         return;
     }
     
-    // Устанавливаем заголовок
+    // Устанавливаем заголовок (без расширения)
     title.textContent = docName;
     
-    // Google Drive PDF viewer URL
-    const pdfUrl = `https://drive.google.com/file/d/${driveFileId}/preview`;
+    // Если есть drive_file_id - открываем напрямую
+    if (driveFileId && driveFileId.trim() !== '') {
+        const pdfUrl = `https://drive.google.com/file/d/${driveFileId}/preview`;
+        iframe.src = pdfUrl;
+        
+        modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+        
+        console.log(`📄 Opening PDF by ID: ${docName} (page ${page})`);
+        return;
+    }
     
-    // Загружаем PDF в iframe
-    iframe.src = pdfUrl;
+    // FALLBACK: Если нет drive_file_id - пытаемся получить его через backend
+    console.log(`⚠️ No drive_file_id, fetching from backend: ${originalFileName}`);
     
-    // Показываем модальное окно
+    // Показываем модальное окно с индикатором загрузки
     modal.classList.add("active");
     document.body.style.overflow = "hidden";
+    iframe.src = ''; // Очищаем iframe
     
+    // Показываем loading
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'pdf-loading';
+    loadingDiv.innerHTML = `
+        <div class="loading-spinner"></div>
+        <p>Поиск документа...</p>
+    `;
+    iframe.parentElement.appendChild(loadingDiv);
+    
+    // Запрос к backend для получения drive_file_id по имени файла
+    fetch(`${CONFIG.API_URL}/get-file-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            filename: originalFileName || docName
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingDiv.remove();
+        
+        if (data.drive_file_id) {
+            const pdfUrl = `https://drive.google.com/file/d/${data.drive_file_id}/preview`;
+            iframe.src = pdfUrl;
+            console.log(`✅ Got drive_file_id from backend: ${data.drive_file_id}`);
+        } else {
+            // Если backend тоже не нашел - показываем ошибку
+            iframe.parentElement.innerHTML = `
+                <div class="pdf-error">
+                    <p>❌ Не удалось загрузить документ</p>
+                    <p class="pdf-error-details">Файл: ${docName}</p>
+                    <button class="btn-primary-small" onclick="closePdfModal()">Закрыть</button>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        loadingDiv.remove();
+        console.error('Error fetching PDF URL:', error);
+        
+        iframe.parentElement.innerHTML = `
+            <div class="pdf-error">
+                <p>❌ Ошибка загрузки документа</p>
+                <button class="btn-primary-small" onclick="closePdfModal()">Закрыть</button>
+            </div>
+        `;
+    });
+}
     console.log(`📄 Opening PDF: ${docName} (page ${page})`);
 }
 
