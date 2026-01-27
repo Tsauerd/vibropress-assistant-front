@@ -516,8 +516,17 @@ function updateExampleQuestions() {
     
     const examples = CONFIG.modes[currentMode].examples;
     container.innerHTML = examples.map(q => 
-        `<button class="example-question" onclick="askQuestion('${escapeHtml(q)}')">${escapeHtml(q)}</button>`
+        `<button class="example-question">${escapeHtml(q)}</button>`
     ).join('');
+    
+    // Добавляем обработчики кликов
+    container.querySelectorAll('.example-question').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const question = btn.textContent;
+            document.getElementById('chat-input').value = question;
+            sendMessage();
+        });
+    });
 }
 
 // ============================================================================
