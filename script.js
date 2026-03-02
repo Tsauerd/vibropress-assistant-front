@@ -144,10 +144,12 @@ async function sendToAPI(message) {
     
     // Формат из /docs: messages, use_rag, max_results, session_id
     const payload = {
+        query: message,
         messages: [{ role: 'user', content: message }],
         use_rag: true,
         max_results: 5,
-        session_id: sessionId
+        session_id: sessionId,
+        mode: currentMode
     };
     
     console.log('📤 Request:', payload);
@@ -351,7 +353,7 @@ function getRatingTitle(rating) {
 }
 
 function renderCollapsibleSources(sources) {
-    const sourcesId = 'sources_' + Date.now();
+    const sourcesId = 'sources_' + (++messageCounter);
     
     // ID папки с ГОСТами (только эти файлы показываем с превью)
     const ALLOWED_FOLDER_ID = '18GV0KaL4Wy_1AGAyhEpVpBorFpX5wesj';
@@ -379,7 +381,7 @@ function renderCollapsibleSources(sources) {
         const folderParentId = source.folder_parent_id || source.parent_folder_id || '';
         
         // Показываем кнопку "Открыть" ТОЛЬКО если файл из разрешённой папки
-        const canOpen = driveFileId && (folderParentId === ALLOWED_FOLDER_ID || !folderParentId);
+        const canOpen = driveFileId && folderParentId === ALLOWED_FOLDER_ID;
         
         html += `
             <div class="source-item">
@@ -519,13 +521,13 @@ function updateExampleQuestions() {
     
     const examples = CONFIG.modes[currentMode].examples;
     container.innerHTML = examples.map(q => 
-        `<button class="example-question">${escapeHtml(q)}</button>`
+        `<button class="example-question" data-question="${escapeHtml(q)}">${escapeHtml(q)}</button>`
     ).join('');
     
     // Добавляем обработчики кликов
     container.querySelectorAll('.example-question').forEach(btn => {
         btn.addEventListener('click', () => {
-            const question = btn.textContent;
+            const question = btn.dataset.question;
             document.getElementById('chat-input').value = question;
             sendMessage();
         });
@@ -593,7 +595,14 @@ function saveChatMessage(userMessage, botResponse) {
         saved.push(entry);
         if (saved.length > 50) saved.shift();
         localStorage.setItem('vibropress_history', JSON.stringify(saved));
-    } catch (e) {}
+    } catch (e) {
+        if (e.name === 'QuotaExceededError') {
+            try {
+                localStorage.removeItem('vibropress_history');
+                localStorage.setItem('vibropress_history', JSON.stringify([entry]));
+            } catch (_) {}
+        }
+    }
     
     updateChatHistoryUI();
 }
@@ -768,6 +777,8 @@ function openPdfPreview(driveFileId, docName, page = 1, originalFileName = '') {
     // Показываем модальное окно с индикатором загрузки
     modal.classList.add("active");
     document.body.style.overflow = "hidden";
+    iframe.style.display = '';
+    iframe.parentElement.querySelectorAll('.pdf-error').forEach(el => el.remove());
     iframe.src = ''; // Очищаем iframe
     
     // Показываем loading
@@ -797,25 +808,22 @@ function openPdfPreview(driveFileId, docName, page = 1, originalFileName = '') {
             console.log(`✅ Got drive_file_id from backend: ${data.drive_file_id}`);
         } else {
             // Если backend тоже не нашел - показываем ошибку
-            iframe.parentElement.innerHTML = `
-                <div class="pdf-error">
-                    <p>❌ Не удалось загрузить документ</p>
-                    <p class="pdf-error-details">Файл: ${docName}</p>
-                    <button class="btn-primary-small" onclick="closePdfModal()">Закрыть</button>
-                </div>
-            `;
+            const errDiv = document.createElement('div');
+            errDiv.className = 'pdf-error';
+            errDiv.innerHTML = `<p>❌ Не удалось загрузить документ</p><p class="pdf-error-details">Файл: ${escapeHtml(docName)}</p><button class="btn-primary-small" onclick="closePdfModal()">Закрыть</button>`;
+            iframe.style.display = 'none';
+            iframe.parentElement.appendChild(errDiv);
         }
     })
     .catch(error => {
         loadingDiv.remove();
         console.error('Error fetching PDF URL:', error);
-        
-        iframe.parentElement.innerHTML = `
-            <div class="pdf-error">
-                <p>❌ Ошибка загрузки документа</p>
-                <button class="btn-primary-small" onclick="closePdfModal()">Закрыть</button>
-            </div>
-        `;
+
+        const errDiv = document.createElement('div');
+        errDiv.className = 'pdf-error';
+        errDiv.innerHTML = `<p>❌ Ошибка загрузки документа</p><button class="btn-primary-small" onclick="closePdfModal()">Закрыть</button>`;
+        iframe.style.display = 'none';
+        iframe.parentElement.appendChild(errDiv);
     });
 }
 
@@ -833,6 +841,8 @@ function closePdfModal() {
     
     if (iframe) {
         iframe.src = "";
+        iframe.style.display = '';
+        iframe.parentElement.querySelectorAll('.pdf-error').forEach(el => el.remove());
     }
 }
 
