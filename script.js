@@ -8,7 +8,7 @@
 // ============================================================================
 
 const CONFIG = {
-    API_URL: 'https://vibropress-assistant-backend.onrender.com',
+    API_URL: 'https://vibropress-v3-backend.onrender.com',
     CHAT_ENDPOINT: '/chat',
     FEEDBACK_ENDPOINT: '/feedback',  // POST {message_id, rating, session_id, comment}
     
