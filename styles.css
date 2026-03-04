@@ -1780,6 +1780,27 @@ body {
     animation: fadeIn 0.3s ease;
 }
 
+.copy-btn {
+    margin-left: auto;
+    min-width: 44px;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    background: #fff;
+    color: var(--gray-700);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.copy-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: #eff6ff;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateX(-10px); }
     to { opacity: 1; transform: translateX(0); }
