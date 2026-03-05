@@ -1,3 +1,17 @@
+function mapModeToTaskType(mode) {
+    switch ((mode || "").toLowerCase()) {
+        case "defects":
+            return "complaint";
+        case "equipment":
+            return "equipment";
+        case "recipes":
+            return "recipes";
+        case "gost":
+        default:
+            return "norm";
+    }
+}
+
 export async function sendToAPI({ config, message, sessionId, mode }) {
     const url = `${config.API_URL}${config.CHAT_ENDPOINT}`;
     const controller = new AbortController();
@@ -9,6 +23,7 @@ export async function sendToAPI({ config, message, sessionId, mode }) {
         use_rag: true,
         max_results: 5,
         session_id: sessionId,
+        task_type: mapModeToTaskType(mode),
         mode,
     };
 
@@ -59,4 +74,3 @@ export async function sendFeedback({ config, messageId, rating, sessionId, comme
         return false;
     }
 }
-
