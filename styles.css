@@ -568,6 +568,13 @@ body {
     align-items: flex-end;
 }
 
+.chat-disclaimer {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--gray-500);
+    line-height: 1.4;
+}
+
 .chat-input {
     flex: 1;
     padding: 14px 18px;
