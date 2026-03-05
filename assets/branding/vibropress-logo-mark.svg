@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="VibroPress AI logo mark">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B1D39"/>
+      <stop offset="100%" stop-color="#133B7A"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2BD3FF"/>
+      <stop offset="100%" stop-color="#6A8DFF"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <g transform="translate(96,88)">
+    <rect x="0" y="32" width="320" height="272" rx="36" fill="#0A1630" stroke="#1C4A93" stroke-width="8"/>
+    <path d="M56 88 L128 248 L184 168 L248 248 L264 248 L192 88 L144 176 L104 88 Z" fill="url(#accent)"/>
+    <rect x="44" y="44" width="232" height="16" rx="8" fill="#1F58B2" opacity="0.85"/>
+    <rect x="44" y="276" width="232" height="12" rx="6" fill="#1F58B2" opacity="0.6"/>
+    <circle cx="288" cy="64" r="12" fill="#2BD3FF"/>
+  </g>
+</svg>

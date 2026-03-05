@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" role="img" aria-label="VibroPress AI full logo">
+  <defs>
+    <linearGradient id="tileBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B1D39"/>
+      <stop offset="100%" stop-color="#133B7A"/>
+    </linearGradient>
+    <linearGradient id="tileAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2BD3FF"/>
+      <stop offset="100%" stop-color="#6A8DFF"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="24" y="24" width="272" height="272" rx="56" fill="url(#tileBg)"/>
+  <g transform="translate(78,70)">
+    <rect x="0" y="26" width="164" height="154" rx="24" fill="#0A1630" stroke="#1C4A93" stroke-width="5"/>
+    <path d="M26 58 L62 150 L92 102 L124 150 L136 150 L100 58 L76 106 L56 58 Z" fill="url(#tileAccent)"/>
+    <rect x="20" y="34" width="120" height="9" rx="4.5" fill="#1F58B2" opacity="0.8"/>
+    <circle cx="148" cy="47" r="6.5" fill="#2BD3FF"/>
+  </g>
+
+  <g fill="#0E2140">
+    <text x="336" y="148" font-size="88" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="800" letter-spacing="1.2">VIBROPRESS</text>
+    <text x="340" y="214" font-size="52" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700" fill="#1C4A93" letter-spacing="8">AI</text>
+    <rect x="408" y="196" width="300" height="6" rx="3" fill="#2BD3FF"/>
+  </g>
+</svg>
