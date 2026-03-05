@@ -245,7 +245,6 @@ function renderEntities(entities) {
 // Safe overrides for API-rendered blocks (avoid inline event handlers).
 function renderCollapsibleSources(sources) {
     const sourcesId = 'sources_' + (++messageCounter);
-    const ALLOWED_FOLDER_ID = '18GV0KaL4Wy_1AGAyhEpVpBorFpX5wesj';
 
     let html = `
         <div class="sources-container">
@@ -259,34 +258,13 @@ function renderCollapsibleSources(sources) {
     sources.forEach((source, index) => {
         const rawDocName = source.document_name || source.doc_name || source.source ||
             source.metadata?.source || source.title || `Источник ${index + 1}`;
-        const docName = String(rawDocName);
-        const docNameClean = docName.replace(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/i, '');
-
-        const pageRaw = source.page_number || source.page || source.metadata?.page;
-        const page = Number.parseInt(String(pageRaw || ''), 10);
-        const safePage = Number.isFinite(page) && page > 0 ? page : null;
-
-        const text = String(source.text || source.content || source.snippet || source.page_content || '');
-        const trimmedText = text.substring(0, 350);
-
-        const scoreRaw = source.score || source.similarity || source.relevance;
-        const score = Number.parseFloat(String(scoreRaw || ''));
-        const scorePercent = Number.isFinite(score) ? Math.round(score * 100) : null;
-
-        const driveFileIdRaw = String(source.drive_file_id || source.file_id || '');
-        const driveFileId = driveFileIdRaw.replace(/[^A-Za-z0-9_-]/g, '');
-        const folderParentId = String(source.folder_parent_id || source.parent_folder_id || '');
-        const canOpen = driveFileId.length > 0 && folderParentId === ALLOWED_FOLDER_ID;
+        const docName = String(rawDocName).replace(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/i, '');
 
         html += `
             <div class="source-item">
                 <div class="source-header">
-                    <strong>${escapeHtml(docNameClean)}</strong>
-                    ${safePage ? `<span class="source-page">стр. ${safePage}</span>` : ''}
-                    ${scorePercent !== null ? `<span class="source-score">${scorePercent}%</span>` : ''}
-                    ${canOpen ? `<button class="source-open-btn" data-drive-file-id="${escapeHtml(driveFileId)}" data-doc-name="${escapeHtml(docNameClean)}" data-page="${safePage || 1}" data-original-file-name="${escapeHtml(docName)}">📄 Открыть</button>` : ''}
+                    <strong>${escapeHtml(docName.trim())}</strong>
                 </div>
-                ${text ? `<p class="source-text">${escapeHtml(trimmedText)}${text.length > 350 ? '...' : ''}</p>` : ''}
             </div>
         `;
     });
@@ -480,18 +458,6 @@ function bindDynamicMessageActions(root) {
             const sourcesId = button.dataset.sourcesId || '';
             if (!sourcesId) return;
             toggleSources(sourcesId);
-        });
-    });
-
-    root.querySelectorAll('.source-open-btn[data-drive-file-id]').forEach(button => {
-        if (button.dataset.boundClick === '1') return;
-        button.dataset.boundClick = '1';
-        button.addEventListener('click', () => {
-            const driveFileId = button.dataset.driveFileId || '';
-            const docName = button.dataset.docName || '';
-            const page = Number.parseInt(button.dataset.page || '1', 10);
-            const originalFileName = button.dataset.originalFileName || '';
-            openPdfPreview(driveFileId, docName, Number.isFinite(page) && page > 0 ? page : 1, originalFileName);
         });
     });
 
@@ -798,4 +764,3 @@ window.closePdfModal = closePdfModal;
 window.loadChatEntry = loadChatEntry;
 window.deleteChatEntry = deleteChatEntry;
 window.askQuestion = askQuestion;
-
