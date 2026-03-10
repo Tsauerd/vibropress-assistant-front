@@ -30,7 +30,7 @@ import {
 // STATE
 // ============================================================================
 
-let currentMode = 'gost';
+let currentMode = 'auto';
 let sessionId = generateSessionId();
 let isLoading = false;
 let chatHistory = [];
@@ -112,7 +112,7 @@ async function sendToAPI(message) {
         config: CONFIG,
         message,
         sessionId: sessionId,
-        mode: currentMode,
+        mode: null,
     });
 }
 // FEEDBACK / RATING (формат из /docs)
@@ -537,7 +537,6 @@ function updateChatHistoryUI() {
                 <div class="chat-item-title">${escapeHtml(preview)}</div>
                 <div class="chat-item-meta">
                     <span>${date} ${time}</span>
-                    <span>${CONFIG.modes[entry.mode]?.name || entry.mode}</span>
                 </div>
                 <button class="chat-item-delete" onclick="event.stopPropagation(); deleteChatEntry(${entry.id})">🗑️</button>
             </div>
@@ -550,12 +549,7 @@ function updateChatHistoryUI() {
 function loadChatEntry(id) {
     const entry = chatHistory.find(e => e.id === id);
     if (!entry) return;
-    
-    if (entry.mode !== currentMode) {
-        const btn = document.querySelector(`[data-mode="${entry.mode}"]`);
-        if (btn) btn.click();
-    }
-    
+
     addMessageToUI('user', entry.userMessage);
     addMessageToUI('bot', entry.botResponse);
     toggleChatHistory();
@@ -586,7 +580,7 @@ function newChat() {
                 <div class="message-avatar">🤖</div>
                 <div class="message-content">
                     <p>Здравствуйте! Я <strong>VibroPress AI</strong> — ваш интеллектуальный помощник.</p>
-                    <p>Выберите режим работы и задайте вопрос.</p>
+                    <p>Просто задайте вопрос. Бот сам определит, нужен ли поиск по ГОСТам, оборудованию, претензиям или рецептурам.</p>
                 </div>
             </div>
         `;

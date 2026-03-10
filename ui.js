@@ -1,11 +1,17 @@
 export function initializeModeButtons({ config, getCurrentMode, setCurrentMode, onModeChanged }) {
-    document.querySelectorAll(".mode-btn").forEach((btn) => {
+    const buttons = document.querySelectorAll(".mode-btn");
+    if (!buttons.length) return;
+
+    buttons.forEach((btn) => {
         btn.addEventListener("click", () => {
-            document.querySelectorAll(".mode-btn").forEach((b) => b.classList.remove("active"));
+            buttons.forEach((b) => b.classList.remove("active"));
             btn.classList.add("active");
             setCurrentMode(btn.dataset.mode || getCurrentMode());
             const current = getCurrentMode();
-            document.getElementById("current-mode").textContent = config.modes[current].name;
+            const currentModeEl = document.getElementById("current-mode");
+            if (currentModeEl && config.modes[current]) {
+                currentModeEl.textContent = config.modes[current].name;
+            }
             onModeChanged();
         });
     });
@@ -21,7 +27,7 @@ export function updateExampleQuestions({
     const container = document.getElementById("example-questions");
     if (!container) return;
 
-    const examples = config.modes[currentMode]?.examples || [];
+    const examples = config.examples || config.modes[currentMode]?.examples || [];
     container.innerHTML = sanitizeHtml(
         examples
             .map(
@@ -56,4 +62,3 @@ export function showTypingIndicator({ scrollToBottom }) {
     scrollToBottom();
     return id;
 }
-

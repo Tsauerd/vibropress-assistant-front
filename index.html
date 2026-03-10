@@ -72,34 +72,14 @@
     <section id="demo" class="demo-section">
         <div class="container">
             <h2 class="section-title">Попробуйте прямо сейчас</h2>
-            <p class="demo-subtitle">Выберите режим работы и задайте свой вопрос</p>
-            
-            <!-- Mode Switcher -->
-            <div class="mode-switcher">
-                <button class="mode-btn active" data-mode="gost">
-                    <span class="mode-icon">📋</span>
-                    <span class="mode-name">ГОСТ/СП</span>
-                </button>
-                <button class="mode-btn" data-mode="equipment">
-                    <span class="mode-icon">⚙️</span>
-                    <span class="mode-name">Оборудование</span>
-                </button>
-                <button class="mode-btn" data-mode="defects">
-                    <span class="mode-icon">🔍</span>
-                    <span class="mode-name">Претензии</span>
-                </button>
-                <button class="mode-btn" data-mode="recipes">
-                    <span class="mode-icon">🧪</span>
-                    <span class="mode-name">Рецептуры</span>
-                </button>
-            </div>
+            <p class="demo-subtitle">Один чат для всех сценариев. Просто задайте вопрос, а бот сам выберет нужный внутренний режим.</p>
 
             <!-- Chat Interface -->
             <div class="chat-container">
                 <div class="chat-header">
                     <div class="chat-status">
                         <span class="status-dot"></span>
-                        <span class="status-text">Режим: <span id="current-mode">ГОСТ/СП</span></span>
+                        <span class="status-text">Один чат. Автоматический подбор режима ответа</span>
                     </div>
                     <div class="chat-header-actions">
                         <button class="chat-header-btn" onclick="newChat()">
@@ -113,7 +93,7 @@
                         <div class="message-avatar">🤖</div>
                         <div class="message-content">
                             <p>Здравствуйте! Я <strong>VibroPress AI</strong> — ваш интеллектуальный помощник.</p>
-                            <p>Выберите режим работы выше и задайте вопрос. Я помогу найти информацию в базе знаний по ГОСТам, оборудованию, дефектам и рецептурам.</p>
+                            <p>Сформулируйте вопрос одним сообщением. Бот сам поймет, нужен ли поиск по ГОСТам, материалам по оборудованию, претензиям или рецептурам.</p>
                         </div>
                     </div>
                 </div>
@@ -126,7 +106,7 @@
                         <textarea 
                             class="chat-input" 
                             id="chat-input" 
-                            placeholder="Введите ваш вопрос..."
+                            placeholder="Сформулируйте ваш вопрос..."
                             rows="1"
                         ></textarea>
                         <button class="send-btn" id="send-btn">

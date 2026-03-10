@@ -7,8 +7,9 @@ function mapModeToTaskType(mode) {
         case "recipes":
             return "recipes";
         case "gost":
-        default:
             return "norm";
+        default:
+            return "";
     }
 }
 
@@ -17,15 +18,19 @@ export async function sendToAPI({ config, message, sessionId, mode }) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), config.REQUEST_TIMEOUT_MS);
 
+    const resolvedMode = typeof mode === "string" && mode.toLowerCase() !== "auto" ? mode : undefined;
+    const resolvedTaskType = mapModeToTaskType(resolvedMode);
+
     const payload = {
         query: message,
         messages: [{ role: "user", content: message }],
         use_rag: true,
         max_results: 5,
         session_id: sessionId,
-        task_type: mapModeToTaskType(mode),
-        mode,
     };
+
+    if (resolvedTaskType) payload.task_type = resolvedTaskType;
+    if (resolvedMode) payload.mode = resolvedMode;
 
     try {
         const response = await fetch(url, {
