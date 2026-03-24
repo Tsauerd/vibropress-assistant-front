@@ -1,5 +1,10 @@
 import { CONFIG } from "./config.js";
-import { sendToAPI as sendToAPIModule, sendFeedback, improveAnswer as improveAnswerModule } from "./api.js";
+import {
+    sendToAPI as sendToAPIModule,
+    sendFeedback,
+    improveAnswer as improveAnswerModule,
+    sendImproveFeedback as sendImproveFeedbackModule,
+} from "./api.js";
 import {
     sendMessage as sendMessageModule,
     addBotResponse as addBotResponseModule,
@@ -141,6 +146,15 @@ async function submitImproveAnswer(messageId) {
     });
 }
 
+async function submitImproveFeedback(messageId, liked) {
+    return sendImproveFeedbackModule({
+        config: CONFIG,
+        messageId,
+        sessionId,
+        liked,
+    });
+}
+
 function handleRatingClick(button, messageId) {
     const rating = parseInt(button.dataset.rating);
     const container = button.closest('.rating-buttons');
@@ -167,6 +181,41 @@ function handleRatingClick(button, messageId) {
             }
         }
     });
+}
+
+function finalizeImproveFeedback(container, text, liked) {
+    if (!container) return;
+    container.querySelectorAll('.improve-feedback-btn').forEach(btn => {
+        btn.disabled = true;
+        btn.classList.toggle('selected', btn.dataset.liked === String(liked));
+    });
+    let thanks = container.querySelector('.improve-feedback-thanks');
+    if (!thanks) {
+        thanks = document.createElement('div');
+        thanks.className = 'improve-feedback-thanks';
+        container.appendChild(thanks);
+    }
+    thanks.textContent = text;
+}
+
+async function handleImproveFeedbackClick(button, messageId, liked) {
+    const container = button.closest('.improve-feedback-container');
+    if (!container) return;
+    container.querySelectorAll('.improve-feedback-btn').forEach(btn => {
+        btn.disabled = true;
+        btn.classList.remove('selected');
+    });
+    button.classList.add('selected');
+
+    try {
+        const result = await submitImproveFeedback(messageId, liked);
+        finalizeImproveFeedback(container, result.message || 'Спасибо за ответ.', liked);
+    } catch (error) {
+        console.error('Improve feedback save failed:', error);
+        container.querySelectorAll('.improve-feedback-btn').forEach(btn => {
+            btn.disabled = false;
+        });
+    }
 }
 
 // ============================================================================
@@ -202,15 +251,34 @@ function addBotResponse(response, userQuery) {
         renderCollapsibleSources,
         renderImages,
         renderEntities,
-        renderRating: (messageId) => renderRating(messageId, Boolean(response?.improve_enabled)),
+        renderRating: (messageId) => renderRating(messageId, response),
         sanitizeHtml,
         bindDynamicMessageActions,
         scrollToBottom,
     });
 }
 
-function renderRating(messageId, improveEnabled = false) {
+function renderRating(messageId, response = {}) {
     const safeMessageId = escapeHtml(String(messageId));
+    const improveEnabled = Boolean(response?.improve_enabled);
+    const feedbackType = String(response?.feedback_type || '').toLowerCase();
+
+    if (feedbackType === 'improved_binary') {
+        return `
+            <div class="rating-container improve-feedback-container">
+                <span class="rating-label">Ответ устроил?</span>
+                <div class="improve-feedback-buttons">
+                    <button class="improve-feedback-btn" data-liked="true" data-message-id="${safeMessageId}">
+                        Да, сохранить
+                    </button>
+                    <button class="improve-feedback-btn" data-liked="false" data-message-id="${safeMessageId}">
+                        Нет
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
     return `
         <div class="rating-container">
             <span class="rating-label">Оцените ответ:</span>
@@ -509,6 +577,17 @@ function bindDynamicMessageActions(root) {
                 button.textContent = initialText || 'Улучшить ответ';
                 addMessageToUI('bot', `Не удалось улучшить ответ: ${error.message}`);
             }
+        });
+    });
+
+    root.querySelectorAll('.improve-feedback-btn[data-message-id]').forEach(button => {
+        if (button.dataset.boundClick === '1') return;
+        button.dataset.boundClick = '1';
+        button.addEventListener('click', async () => {
+            const messageId = button.dataset.messageId || '';
+            const liked = button.dataset.liked === 'true';
+            if (!messageId || button.disabled) return;
+            await handleImproveFeedbackClick(button, messageId, liked);
         });
     });
 }

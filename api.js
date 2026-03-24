@@ -100,3 +100,25 @@ export async function improveAnswer({ config, messageId, sessionId }) {
 
     return await response.json();
 }
+
+export async function sendImproveFeedback({ config, messageId, sessionId, liked }) {
+    const response = await fetch(`${config.API_URL}${config.IMPROVE_FEEDBACK_ENDPOINT}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+        },
+        body: JSON.stringify({
+            message_id: messageId,
+            session_id: sessionId,
+            liked,
+        }),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    return await response.json();
+}

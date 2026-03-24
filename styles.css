@@ -1820,6 +1820,54 @@ body {
     cursor: default;
 }
 
+.improve-feedback-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.improve-feedback-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.improve-feedback-btn {
+    min-height: 38px;
+    padding: 0 14px;
+    border: 1px solid var(--gray-300);
+    border-radius: 999px;
+    background: white;
+    color: var(--gray-700);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.improve-feedback-btn:hover {
+    border-color: var(--primary);
+    background: #eff6ff;
+    color: var(--primary);
+}
+
+.improve-feedback-btn.selected {
+    border-color: var(--success);
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.improve-feedback-btn:disabled {
+    opacity: 0.75;
+    cursor: default;
+}
+
+.improve-feedback-thanks {
+    font-size: 13px;
+    color: var(--success);
+    font-weight: 600;
+}
+
 .copy-btn {
     margin-left: auto;
     min-width: 44px;
