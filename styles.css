@@ -1787,6 +1787,39 @@ body {
     animation: fadeIn 0.3s ease;
 }
 
+.improve-btn {
+    margin-left: auto;
+    min-height: 38px;
+    padding: 0 14px;
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    color: var(--primary-dark);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.improve-btn:hover {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    transform: translateY(-1px);
+}
+
+.improve-btn.loading,
+.improve-btn:disabled {
+    cursor: wait;
+    opacity: 0.75;
+    transform: none;
+}
+
+.improve-btn.done {
+    border-color: var(--success);
+    background: #ecfdf5;
+    color: #047857;
+    cursor: default;
+}
+
 .copy-btn {
     margin-left: auto;
     min-width: 44px;
@@ -1950,6 +1983,13 @@ body {
     .rating-btn {
         flex: 1;
         max-width: 50px;
+    }
+
+    .improve-btn,
+    .copy-btn {
+        margin-left: 0;
+        width: 100%;
+        justify-content: center;
     }
 
 }

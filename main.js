@@ -1,5 +1,5 @@
 import { CONFIG } from "./config.js";
-import { sendToAPI as sendToAPIModule, sendFeedback } from "./api.js";
+import { sendToAPI as sendToAPIModule, sendFeedback, improveAnswer as improveAnswerModule } from "./api.js";
 import {
     sendMessage as sendMessageModule,
     addBotResponse as addBotResponseModule,
@@ -133,6 +133,14 @@ async function submitRating(messageId, rating, comment = '') {
     return ok;
 }
 
+async function submitImproveAnswer(messageId) {
+    return improveAnswerModule({
+        config: CONFIG,
+        messageId,
+        sessionId,
+    });
+}
+
 function handleRatingClick(button, messageId) {
     const rating = parseInt(button.dataset.rating);
     const container = button.closest('.rating-buttons');
@@ -194,14 +202,14 @@ function addBotResponse(response, userQuery) {
         renderCollapsibleSources,
         renderImages,
         renderEntities,
-        renderRating,
+        renderRating: (messageId) => renderRating(messageId, Boolean(response?.improve_enabled)),
         sanitizeHtml,
         bindDynamicMessageActions,
         scrollToBottom,
     });
 }
 
-function renderRating(messageId) {
+function renderRating(messageId, improveEnabled = false) {
     const safeMessageId = escapeHtml(String(messageId));
     return `
         <div class="rating-container">
@@ -216,6 +224,11 @@ function renderRating(messageId) {
                     </button>
                 `).join('')}
             </div>
+            ${improveEnabled ? `
+                <button class="improve-btn" data-message-id="${safeMessageId}" title="Запросить улучшенную версию ответа">
+                    Улучшить ответ
+                </button>
+            ` : ''}
         </div>
     `;
 }
@@ -468,6 +481,34 @@ function bindDynamicMessageActions(root) {
             const imageSrc = card.dataset.imageSrc || '';
             if (!imageSrc.startsWith('data:image/')) return;
             openLightbox(imageSrc);
+        });
+    });
+
+    root.querySelectorAll('.improve-btn[data-message-id]').forEach(button => {
+        if (button.dataset.boundClick === '1') return;
+        button.dataset.boundClick = '1';
+        button.addEventListener('click', async () => {
+            const messageId = button.dataset.messageId || '';
+            if (!messageId || button.disabled) return;
+
+            const initialText = button.textContent;
+            button.disabled = true;
+            button.classList.add('loading');
+            button.textContent = 'Улучшаю...';
+
+            try {
+                const improved = await submitImproveAnswer(messageId);
+                addBotResponse(improved, '');
+                button.classList.remove('loading');
+                button.classList.add('done');
+                button.textContent = 'Улучшено';
+            } catch (error) {
+                console.error('Improve answer failed:', error);
+                button.disabled = false;
+                button.classList.remove('loading');
+                button.textContent = initialText || 'Улучшить ответ';
+                addMessageToUI('bot', `Не удалось улучшить ответ: ${error.message}`);
+            }
         });
     });
 }

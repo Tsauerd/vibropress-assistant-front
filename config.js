@@ -9,6 +9,7 @@ function resolveApiUrl() {
 export const CONFIG = {
     API_URL: resolveApiUrl(),
     CHAT_ENDPOINT: "/chat",
+    IMPROVE_ENDPOINT: "/answer/improve",
     REQUEST_TIMEOUT_MS: 60000,
     FEEDBACK_ENDPOINT: "/feedback",
     HISTORY_STORAGE_KEY: "vibropress_history",

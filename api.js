@@ -79,3 +79,24 @@ export async function sendFeedback({ config, messageId, rating, sessionId, comme
         return false;
     }
 }
+
+export async function improveAnswer({ config, messageId, sessionId }) {
+    const response = await fetch(`${config.API_URL}${config.IMPROVE_ENDPOINT}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+        },
+        body: JSON.stringify({
+            message_id: messageId,
+            session_id: sessionId,
+        }),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    return await response.json();
+}
