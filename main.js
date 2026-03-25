@@ -269,7 +269,7 @@ function renderRating(messageId, response = {}) {
                 <span class="rating-label">Ответ устроил?</span>
                 <div class="improve-feedback-buttons">
                     <button class="improve-feedback-btn" data-liked="true" data-message-id="${safeMessageId}">
-                        Да, сохранить
+                        Да
                     </button>
                     <button class="improve-feedback-btn" data-liked="false" data-message-id="${safeMessageId}">
                         Нет
