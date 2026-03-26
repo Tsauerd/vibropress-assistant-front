@@ -27,7 +27,17 @@ export function updateExampleQuestions({
     const container = document.getElementById("example-questions");
     if (!container) return;
 
-    const examples = config.examples || config.modes[currentMode]?.examples || [];
+    const modeExamples = config.modes[currentMode]?.examples || [];
+    const baseExamples = modeExamples.length ? modeExamples : (config.examples || []);
+    const displayCount = Number(config.EXAMPLE_DISPLAY_COUNT || 4);
+    const rotationHours = Math.max(1, Number(config.EXAMPLE_ROTATION_HOURS || 6));
+    const rotationKey = Math.floor(Date.now() / (rotationHours * 60 * 60 * 1000));
+    const offset = baseExamples.length ? rotationKey % baseExamples.length : 0;
+    const rotated = baseExamples.length
+        ? [...baseExamples.slice(offset), ...baseExamples.slice(0, offset)]
+        : [];
+    const examples = rotated.slice(0, Math.min(displayCount, rotated.length));
+
     container.innerHTML = sanitizeHtml(
         examples
             .map(
