@@ -21,7 +21,7 @@ import {
     clearChat,
 } from "./storage.js";
 /**
- * VibroPress AI - Frontend Script
+ * Строительный помощник AI - Frontend Script
  * С рейтингом ответов и раскрывающимися источниками
  */
 
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadChatHistory();
     updateExampleQuestions();
     
-    console.log('✅ VibroPress AI initialized');
+    console.log('✅ Строительный помощник AI initialized');
     console.log('Session:', sessionId);
 });
 
@@ -699,8 +699,9 @@ function newChat() {
             <div class="message bot-message">
                 <div class="message-avatar">🤖</div>
                 <div class="message-content">
-                    <p>Здравствуйте! Я <strong>VibroPress AI</strong> — ваш интеллектуальный помощник.</p>
-                    <p>Просто задайте вопрос. Бот сам определит, нужен ли поиск по ГОСТам, оборудованию, претензиям или рецептурам.</p>
+                    <p>Здравствуйте! Я <strong>Строительный помощник AI</strong>.</p>
+                    <p>Задайте вопрос одним сообщением. Я сам определю, нужен ли поиск по ГОСТам, оборудованию, материалам, претензиям или рецептурам.</p>
+                    <p>Если часть разделов закрыта, их можно открыть промокодом.</p>
                 </div>
             </div>
         `;
