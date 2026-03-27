@@ -96,6 +96,14 @@ export function applyBranding() {
     const footerTexts = document.querySelectorAll(".footer-text");
     if (footerTexts[0]) footerTexts[0].textContent = brand.footerPrimary;
     if (footerTexts[1]) {
-        footerTexts[1].innerHTML = `Обратная связь: <a href="${brand.supportTelegramUrl}" class="footer-link">${brand.footerSecondaryTelegramLabel}</a> • <a href="mailto:${brand.supportEmail}" class="footer-link">${brand.footerSecondaryEmailLabel}</a>`;
+        const footerLinks = [
+            `<a href="${brand.supportTelegramUrl}" class="footer-link">${brand.footerSecondaryTelegramLabel}</a>`,
+        ];
+        if (brand.supportEmail) {
+            footerLinks.push(
+                `<a href="mailto:${brand.supportEmail}" class="footer-link">${brand.footerSecondaryEmailLabel}</a>`,
+            );
+        }
+        footerTexts[1].innerHTML = `Обратная связь: ${footerLinks.join(" • ")}`;
     }
 }

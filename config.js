@@ -79,11 +79,11 @@ const BRAND_PRESETS = {
         footerPrimary: "VibroPress AI — единая инженерная платформа для вибропрессованных бетонных изделий",
         footerSecondaryTelegramLabel: "Telegram",
         footerSecondaryEmailLabel: "Email",
-        supportTelegramUrl: "https://t.me/yourusername",
-        supportEmail: "contact@example.com",
+        supportTelegramUrl: "https://t.me/VibropressAIbot",
+        supportEmail: "",
         telegram: {
-            handle: "@id310260589375_bot",
-            url: "https://t.me/id310260589375_bot",
+            handle: "@VibropressAIbot",
+            url: "https://t.me/VibropressAIbot",
             description:
                 "Доступ к VibroPress AI из Telegram. Удобно для технологов, начальников производства и лаборатории.",
         },
@@ -192,11 +192,11 @@ const BRAND_PRESETS = {
         footerPrimary: "Строительный помощник AI — единая платформа с пакетным доступом к отраслевым знаниям",
         footerSecondaryTelegramLabel: "Telegram",
         footerSecondaryEmailLabel: "Email",
-        supportTelegramUrl: "https://t.me/yourusername",
-        supportEmail: "contact@example.com",
+        supportTelegramUrl: "https://t.me/VibropressAIbot",
+        supportEmail: "",
         telegram: {
-            handle: "@id310260589375_bot",
-            url: "https://t.me/id310260589375_bot",
+            handle: "@VibropressAIbot",
+            url: "https://t.me/VibropressAIbot",
             description:
                 "Доступ к Строительному помощнику AI из Telegram. Подходит для команд, которым нужен быстрый инженерный чат.",
         },
