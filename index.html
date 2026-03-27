@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="brand-key" content="construction">
-    <meta name="description" content="РЎС‚СЂРѕРёС‚РµР»СЊРЅС‹Р№ РїРѕРјРѕС‰РЅРёРє AI вЂ” РµРґРёРЅС‹Р№ РР-РїРѕРјРѕС‰РЅРёРє РїРѕ Р“РћРЎРўР°Рј, РјР°С‚РµСЂРёР°Р»Р°Рј, РѕР±РѕСЂСѓРґРѕРІР°РЅРёСЋ, СЂРµС†РµРїС‚СѓСЂР°Рј Рё РїСЂРµС‚РµРЅР·РёСЏРј">
+    <meta name="description" content="Строительный помощник AI — единый инженерный ИИ по ГОСТ/СП, материалам, оборудованию, рецептурам и претензиям.">
     <meta name="api-url" content="https://vibropress-v3-backend.onrender.com">
     <title>Строительный помощник AI — единый инженерный ИИ для строительных задач</title>
     
@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="pdf-modal-styles.css">
     
-    <!-- KaTeX РґР»СЏ РјР°С‚РµРјР°С‚РёС‡РµСЃРєРёС… С„РѕСЂРјСѓР» -->
+    <!-- KaTeX для математических формул -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
@@ -32,21 +32,21 @@
         });"></script>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3EрџЏ­%3C/text%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏭%3C/text%3E%3C/svg%3E">
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar">
         <div class="container">
-            <a href="#" class="nav-brand">РЎС‚СЂРѕРёС‚РµР»СЊРЅС‹Р№ РїРѕРјРѕС‰РЅРёРє AI</a>
+            <a href="#" class="nav-brand">Строительный помощник AI</a>
             <ul class="nav-menu">
-                <li><a href="#demo" class="nav-link">Р”РµРјРѕ</a></li>
-                <li><a href="#features" class="nav-link">Р’РѕР·РјРѕР¶РЅРѕСЃС‚Рё</a></li>
-                <li><a href="#how" class="nav-link">РљР°Рє СЂР°Р±РѕС‚Р°РµС‚</a></li>
-                <li><a href="#for-whom" class="nav-link">Р”Р»СЏ РєРѕРіРѕ</a></li>
-                <li><a href="#demo" class="btn-primary-small">РћС‚РєСЂС‹С‚СЊ Р±РѕС‚Р°</a></li>
+                <li><a href="#demo" class="nav-link">Демо</a></li>
+                <li><a href="#features" class="nav-link">Возможности</a></li>
+                <li><a href="#how" class="nav-link">Как работает</a></li>
+                <li><a href="#for-whom" class="nav-link">Для кого</a></li>
+                <li><a href="#demo" class="btn-primary-small">Открыть бота</a></li>
             </ul>
-            <button class="mobile-menu-toggle" aria-label="РњРµРЅСЋ" onclick="this.classList.toggle('active'); document.querySelector('.nav-menu').classList.toggle('active');">
+            <button class="mobile-menu-toggle" aria-label="Меню" onclick="this.classList.toggle('active'); document.querySelector('.nav-menu').classList.toggle('active');">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -59,11 +59,11 @@
     <section class="hero">
         <div class="container">
             <div class="hero-content">
-                <h1 class="hero-title">РЎС‚СЂРѕРёС‚РµР»СЊРЅС‹Р№ РїРѕРјРѕС‰РЅРёРє AI</h1>
-                <p class="hero-subtitle">Р•РґРёРЅС‹Р№ РР-РїРѕРјРѕС‰РЅРёРє РґР»СЏ СЃС‚СЂРѕРёС‚РµР»СЊРЅС‹С… Рё РїСЂРѕРёР·РІРѕРґСЃС‚РІРµРЅРЅС‹С… РєРѕРјР°РЅРґ: РїРѕРёСЃРє РїРѕ Р“РћРЎРўР°Рј Рё РЎРџ, РјР°С‚РµСЂРёР°Р»Р°Рј, РѕР±РѕСЂСѓРґРѕРІР°РЅРёСЋ, СЂРµС†РµРїС‚СѓСЂР°Рј Рё РїСЂРµС‚РµРЅР·РёРѕРЅРЅС‹Рј РєРµР№СЃР°Рј.</p>
+                <h1 class="hero-title">Строительный помощник AI</h1>
+                <p class="hero-subtitle">Единый инженерный ИИ для строительных и производственных команд: поиск по ГОСТам и СП, материалам, оборудованию, рецептурам и претензионным кейсам.</p>
                 <div class="hero-buttons">
-                    <a href="#demo" class="btn-primary">рџљЂ РџРѕРїСЂРѕР±РѕРІР°С‚СЊ РґРµРјРѕ</a>
-                    <a href="#how" class="btn-secondary">рџ“– РљР°Рє СЌС‚Рѕ СЂР°Р±РѕС‚Р°РµС‚</a>
+                    <a href="#demo" class="btn-primary">🚀 Попробовать демо</a>
+                    <a href="#how" class="btn-secondary">📖 Как это работает</a>
                 </div>
             </div>
         </div>
@@ -72,30 +72,30 @@
     <!-- Interactive Demo Section -->
     <section id="demo" class="demo-section">
         <div class="container">
-            <h2 class="section-title">РџРѕРїСЂРѕР±СѓР№С‚Рµ РїСЂСЏРјРѕ СЃРµР№С‡Р°СЃ</h2>
-            <p class="demo-subtitle">РћРґРёРЅ С‡Р°С‚ РґР»СЏ РІСЃРµС… СЃС†РµРЅР°СЂРёРµРІ. Р”РѕСЃС‚СѓРї Рє РЅСѓР¶РЅС‹Рј СЂР°Р·РґРµР»Р°Рј РѕС‚РєСЂС‹РІР°РµС‚СЃСЏ РїРѕ РїСЂРѕРјРѕРєРѕРґСѓ Рё РїР°РєРµС‚Сѓ: РЅРѕСЂРјР°С‚РёРІРєР°, РѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ, СЂРµС†РµРїС‚СѓСЂС‹, РїСЂРµС‚РµРЅР·РёРё Рё РґСЂСѓРіРёРµ Р±Р»РѕРєРё.</p>
+            <h2 class="section-title">Попробуйте прямо сейчас</h2>
+            <p class="demo-subtitle">Один чат для всех сценариев. Доступ к нужным разделам открывается по промокоду и пакету: нормативка, оборудование, рецептуры, претензии и другие блоки.</p>
 
             <!-- Chat Interface -->
             <div class="chat-container">
                 <div class="chat-header">
                     <div class="chat-status">
                         <span class="status-dot"></span>
-                        <span class="status-text">РћРґРёРЅ С‡Р°С‚. РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРёР№ РїРѕРґР±РѕСЂ СЂРµР¶РёРјР° РѕС‚РІРµС‚Р°</span>
+                        <span class="status-text">Один чат. Автоматический подбор режима ответа</span>
                     </div>
                     <div class="chat-header-actions">
                         <button class="chat-header-btn" onclick="newChat()">
-                            <span>рџ†•</span> РќРѕРІС‹Р№ С‡Р°С‚
+                            <span>🆕</span> Новый чат
                         </button>
                     </div>
                 </div>
                 
                 <div class="chat-messages" id="chat-messages">
                     <div class="message bot-message">
-                        <div class="message-avatar">рџ¤–</div>
+                        <div class="message-avatar">🤖</div>
                         <div class="message-content">
-                            <p>Р—РґСЂР°РІСЃС‚РІСѓР№С‚Рµ! РЇ <strong>РЎС‚СЂРѕРёС‚РµР»СЊРЅС‹Р№ РїРѕРјРѕС‰РЅРёРє AI</strong>.</p>
-                            <p>РЎС„РѕСЂРјСѓР»РёСЂСѓР№С‚Рµ РІРѕРїСЂРѕСЃ РѕРґРЅРёРј СЃРѕРѕР±С‰РµРЅРёРµРј. РЇ СЃР°Рј РІС‹Р±РµСЂСѓ РЅСѓР¶РЅС‹Р№ РєРѕРЅС‚СѓСЂ РїРѕРёСЃРєР°: РЅРѕСЂРјР°С‚РёРІРєР°, РѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ, РјР°С‚РµСЂРёР°Р»С‹, СЂРµС†РµРїС‚СѓСЂС‹ РёР»Рё РїСЂРµС‚РµРЅР·РёРѕРЅРЅС‹Рµ РєРµР№СЃС‹.</p>
-                            <p>Р•СЃР»Рё Сѓ РІР°СЃ РѕС‚РєСЂС‹С‚ РЅРµ РІРµСЃСЊ С„СѓРЅРєС†РёРѕРЅР°Р», РЅСѓР¶РЅС‹Рµ Р±Р»РѕРєРё РјРѕР¶РЅРѕ Р°РєС‚РёРІРёСЂРѕРІР°С‚СЊ РїСЂРѕРјРѕРєРѕРґРѕРј.</p>
+                            <p>Здравствуйте! Я <strong>Строительный помощник AI</strong>.</p>
+                            <p>Сформулируйте вопрос одним сообщением. Я сам выберу нужный контур поиска: нормативка, оборудование, материалы, рецептуры или претензионные кейсы.</p>
+                            <p>Если у вас открыт не весь функционал, нужные блоки можно активировать промокодом.</p>
                         </div>
                     </div>
                 </div>
@@ -108,7 +108,7 @@
                         <textarea 
                             class="chat-input" 
                             id="chat-input" 
-                            placeholder="РЎС„РѕСЂРјСѓР»РёСЂСѓР№С‚Рµ РІР°С€ РІРѕРїСЂРѕСЃ..."
+                            placeholder="Сформулируйте ваш вопрос..."
                             rows="1"
                         ></textarea>
                         <button class="send-btn" id="send-btn">
@@ -119,7 +119,7 @@
                         </button>
                     </div>
                     <p class="chat-disclaimer">
-                        РћС‚РїСЂР°РІР»СЏСЏ СЃРѕРѕР±С‰РµРЅРёРµ, РІС‹ СЃРѕРіР»Р°С€Р°РµС‚РµСЃСЊ, С‡С‚Рѕ РїРµСЂРµРїРёСЃРєР° Рё РѕС†РµРЅРєРё СЃРѕС…СЂР°РЅСЏСЋС‚СЃСЏ РґР»СЏ СѓР»СѓС‡С€РµРЅРёСЏ РєР°С‡РµСЃС‚РІР° СЃРµСЂРІРёСЃР°.
+                        Отправляя сообщение, вы соглашаетесь, что переписка и оценки сохраняются для улучшения качества сервиса.
                     </p>
                 </div>
             </div>
@@ -129,30 +129,30 @@
     <!-- Features Section -->
     <section id="features" class="features">
         <div class="container">
-            <h2 class="section-title">Р§С‚Рѕ СѓРјРµРµС‚ Р±РѕС‚</h2>
+            <h2 class="section-title">Что умеет бот</h2>
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">рџ“‹</div>
-                    <h3 class="feature-title">РџРѕРёСЃРє РїРѕ РЅРѕСЂРјР°С‚РёРІРєРµ</h3>
-                    <p class="feature-description">Р‘С‹СЃС‚СЂРѕ РЅР°С…РѕРґРёС‚ С‚СЂРµР±РѕРІР°РЅРёСЏ, РїСѓРЅРєС‚С‹ Рё С‚Р°Р±Р»РёС†С‹ РёР· Р“РћРЎРўРѕРІ Рё РЎРџ. РЎСЃС‹Р»РєРё РЅР° РєРѕРЅРєСЂРµС‚РЅС‹Рµ СЂР°Р·РґРµР»С‹ РґРѕРєСѓРјРµРЅС‚РѕРІ.</p>
+                    <div class="feature-icon">📋</div>
+                    <h3 class="feature-title">Поиск по нормативке</h3>
+                    <p class="feature-description">Быстро находит требования, пункты и таблицы из ГОСТов и СП. Ссылки на конкретные разделы документов.</p>
                 </div>
                 
                 <div class="feature-card">
-                    <div class="feature-icon">вљ™пёЏ</div>
-                    <h3 class="feature-title">РњР°РЅСѓР°Р»С‹ РѕР±РѕСЂСѓРґРѕРІР°РЅРёСЏ</h3>
-                    <p class="feature-description">РћС‚РІРµС‡Р°РµС‚ РїРѕ РЅР°СЃС‚СЂРѕР№РєР°Рј, СЂРµР¶РёРјР°Рј, РґРёР°РіРЅРѕСЃС‚РёРєРµ Рё С‚РёРїРѕРІС‹Рј РѕС€РёР±РєР°Рј РІРёР±СЂРѕРїСЂРµСЃСЃРѕРІ Рё РґСЂСѓРіРѕРіРѕ РѕР±РѕСЂСѓРґРѕРІР°РЅРёСЏ.</p>
+                    <div class="feature-icon">⚙️</div>
+                    <h3 class="feature-title">Мануалы оборудования</h3>
+                    <p class="feature-description">Отвечает по настройкам, режимам, диагностике и типовым ошибкам вибропрессов и другого оборудования.</p>
                 </div>
                 
                 <div class="feature-card">
-                    <div class="feature-icon">рџ”Ќ</div>
-                    <h3 class="feature-title">РћС‚РІРµС‚С‹ РЅР° РїСЂРµС‚РµРЅР·РёРё</h3>
-                    <p class="feature-description">Р Р°Р·Р±РѕСЂ РїСЂРёС‡РёРЅС‹ РґРµС„РµРєС‚РѕРІ + СЃСЃС‹Р»РєР° РЅР° РЅРѕСЂРјС‹/РёСЃРїС‹С‚Р°РЅРёСЏ + С‡РµСЂРЅРѕРІРёРє РѕС‚РІРµС‚Р° РєР»РёРµРЅС‚Сѓ.</p>
+                    <div class="feature-icon">🔍</div>
+                    <h3 class="feature-title">Ответы на претензии</h3>
+                    <p class="feature-description">Разбор причины дефектов + ссылка на нормы/испытания + черновик ответа клиенту.</p>
                 </div>
                 
                 <div class="feature-card">
-                    <div class="feature-icon">рџ§Є</div>
-                    <h3 class="feature-title">Р РµС†РµРїС‚СѓСЂС‹ Рё СЃРѕСЃС‚Р°РІС‹</h3>
-                    <p class="feature-description">РџРѕРґР±РѕСЂ СЃРјРµСЃРё, Р’/Р¦, РґРѕР±Р°РІРѕРє, РІРёР±СЂРѕ-СЂРµР¶РёРјР° РїРѕРґ С†РµР»СЊ: РїСЂРѕС‡РЅРѕСЃС‚СЊ, РјРѕСЂРѕР·РѕСЃС‚РѕР№РєРѕСЃС‚СЊ, РёСЃС‚РёСЂР°РµРјРѕСЃС‚СЊ, С†РІРµС‚.</p>
+                    <div class="feature-icon">🧪</div>
+                    <h3 class="feature-title">Рецептуры и составы</h3>
+                    <p class="feature-description">Подбор смеси, В/Ц, добавок, вибро-режима под цель: прочность, морозостойкость, истираемость, цвет.</p>
                 </div>
             </div>
         </div>
@@ -161,28 +161,28 @@
     <!-- How It Works Section -->
     <section id="how" class="how-it-works">
         <div class="container">
-            <h2 class="section-title">РљР°Рє СЂР°Р±РѕС‚Р°РµС‚</h2>
+            <h2 class="section-title">Как работает</h2>
             <div class="steps">
                 <div class="step">
                     <div class="step-number">1</div>
-                    <h3 class="step-title">Р—Р°РіСЂСѓР·РёР»Рё Р±Р°Р·Сѓ</h3>
-                    <p class="step-description">Р“РћРЎРўС‹, РЎРџ, РјР°РЅСѓР°Р»С‹ РѕР±РѕСЂСѓРґРѕРІР°РЅРёСЏ Рё С‚РµС…РЅРёС‡РµСЃРєСѓСЋ РґРѕРєСѓРјРµРЅС‚Р°С†РёСЋ РѕР±СЂР°Р±РѕС‚Р°Р»Рё Рё РёРЅРґРµРєСЃРёСЂРѕРІР°Р»Рё</p>
+                    <h3 class="step-title">Загрузили базу</h3>
+                    <p class="step-description">ГОСТы, СП, мануалы оборудования и техническую документацию обработали и индексировали</p>
                 </div>
                 
-                <div class="step-arrow">в†’</div>
+                <div class="step-arrow">→</div>
                 
                 <div class="step">
                     <div class="step-number">2</div>
-                    <h3 class="step-title">Р—Р°РґР°Р»Рё РІРѕРїСЂРѕСЃ</h3>
-                    <p class="step-description">Р’С‹ РїРёС€РµС‚Рµ РЅР° РµСЃС‚РµСЃС‚РІРµРЅРЅРѕРј СЏР·С‹РєРµ вЂ” Р±РѕС‚ РїРѕРЅРёРјР°РµС‚ РєРѕРЅС‚РµРєСЃС‚ Рё РЅР°С…РѕРґРёС‚ СЂРµР»РµРІР°РЅС‚РЅСѓСЋ РёРЅС„РѕСЂРјР°С†РёСЋ</p>
+                    <h3 class="step-title">Задали вопрос</h3>
+                    <p class="step-description">Вы пишете на естественном языке — бот понимает контекст и находит релевантную информацию</p>
                 </div>
                 
-                <div class="step-arrow">в†’</div>
+                <div class="step-arrow">→</div>
                 
                 <div class="step">
                     <div class="step-number">3</div>
-                    <h3 class="step-title">РџРѕР»СѓС‡РёР»Рё РѕС‚РІРµС‚</h3>
-                    <p class="step-description">Р“РѕС‚РѕРІРѕРµ СЂРµС€РµРЅРёРµ СЃРѕ СЃСЃС‹Р»РєР°РјРё РЅР° РёСЃС‚РѕС‡РЅРёРєРё, РЅРѕРјРµСЂР°РјРё РїСѓРЅРєС‚РѕРІ Рё С‚Р°Р±Р»РёС†Р°РјРё</p>
+                    <h3 class="step-title">Получили ответ</h3>
+                    <p class="step-description">Готовое решение со ссылками на источники, номерами пунктов и таблицами</p>
                 </div>
             </div>
         </div>
@@ -191,23 +191,23 @@
     <!-- For Whom Section -->
     <section id="for-whom" class="for-whom">
         <div class="container">
-            <h2 class="section-title">Р”Р»СЏ РєРѕРіРѕ</h2>
+            <h2 class="section-title">Для кого</h2>
             <div class="badges">
                 <div class="badge">
-                    <span class="badge-icon">рџЏ­</span>
-                    <span class="badge-text">РџСЂРѕРёР·РІРѕРґСЃС‚РІРѕ</span>
+                    <span class="badge-icon">🏭</span>
+                    <span class="badge-text">Производство</span>
                 </div>
                 <div class="badge">
-                    <span class="badge-icon">рџ”¬</span>
-                    <span class="badge-text">Р›Р°Р±РѕСЂР°С‚РѕСЂРёСЏ</span>
+                    <span class="badge-icon">🔬</span>
+                    <span class="badge-text">Лаборатория</span>
                 </div>
                 <div class="badge">
-                    <span class="badge-icon">рџ› пёЏ</span>
-                    <span class="badge-text">РўРµС…РїРѕРґРґРµСЂР¶РєР°</span>
+                    <span class="badge-icon">🛠️</span>
+                    <span class="badge-text">Техподдержка</span>
                 </div>
                 <div class="badge">
-                    <span class="badge-icon">рџ“ђ</span>
-                    <span class="badge-text">РџСЂРѕРµРєС‚РёСЂРѕРІС‰РёРєРё</span>
+                    <span class="badge-icon">📐</span>
+                    <span class="badge-text">Проектировщики</span>
                 </div>
             </div>
         </div>
@@ -216,50 +216,50 @@
     <!-- CTA Section -->
     <section class="cta">
         <div class="container">
-            <h2 class="cta-title">Р“РѕС‚РѕРІС‹ РїРѕРїСЂРѕР±РѕРІР°С‚СЊ?</h2>
-            <p class="cta-subtitle">РћС‚РєСЂРѕР№С‚Рµ РµРґРёРЅС‹Р№ РёРЅР¶РµРЅРµСЂРЅС‹Р№ РєРѕРЅС‚СѓСЂ Рё РїРѕРґРєР»СЋС‡Р°Р№С‚Рµ РЅСѓР¶РЅС‹Рµ СЂР°Р·РґРµР»С‹ РїРѕ РїСЂРѕРјРѕРєРѕРґСѓ: Р“РћРЎРўС‹, РѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ, СЂРµС†РµРїС‚СѓСЂС‹, РїСЂРµС‚РµРЅР·РёРё Рё РїСЂРѕС„РёР»СЊРЅС‹Рµ Р±Р°Р·С‹ Р·РЅР°РЅРёР№.</p>
-            <a href="#demo" class="btn-primary">рџљЂ РћС‚РєСЂС‹С‚СЊ Р±РѕС‚Р°</a>
+            <h2 class="cta-title">Готовы попробовать?</h2>
+            <p class="cta-subtitle">Откройте единый инженерный контур и подключайте нужные разделы по промокоду: ГОСТы, оборудование, рецептуры, претензии и профильные базы знаний.</p>
+            <a href="#demo" class="btn-primary">🚀 Открыть бота</a>
         </div>
     </section>
     <section class="messenger-links">
         <div class="container">
             <div class="messenger-links-header">
-                <h2 class="section-title">РћС‚РєСЂРѕР№С‚Рµ Р±РѕС‚Р° РІ РјРµСЃСЃРµРЅРґР¶РµСЂРµ</h2>
-                <p class="demo-subtitle">РћС‚СЃРєР°РЅРёСЂСѓР№С‚Рµ QR-РєРѕРґ РёР»Рё РїРµСЂРµР№РґРёС‚Рµ РїРѕ РїСЂСЏРјРѕР№ СЃСЃС‹Р»РєРµ. РџРѕСЃР»Рµ Р°РєС‚РёРІР°С†РёРё РїСЂРѕРјРѕРєРѕРґР° Р·Р° Р°РєРєР°СѓРЅС‚РѕРј Р·Р°РєСЂРµРїСЏС‚СЃСЏ РЅСѓР¶РЅС‹Рµ СЂР°Р·РґРµР»С‹ Рё РїР°РєРµС‚С‹ РґРѕСЃС‚СѓРїР°.</p>
+                <h2 class="section-title">Откройте бота в мессенджере</h2>
+                <p class="demo-subtitle">Отсканируйте QR-код или перейдите по прямой ссылке. После активации промокода за аккаунтом закрепятся нужные разделы и пакеты доступа.</p>
             </div>
             <div class="messenger-grid">
                 <article class="messenger-card">
                     <div class="messenger-card-top">
                         <span class="messenger-badge messenger-badge-telegram">Telegram</span>
                         <h3 class="messenger-title">@VibropressAIbot</h3>
-                        <p class="messenger-description">Р’С…РѕРґ РІ РЎС‚СЂРѕРёС‚РµР»СЊРЅС‹Р№ РїРѕРјРѕС‰РЅРёРє AI РёР· Telegram. РџРѕСЃР»Рµ Р°РєС‚РёРІР°С†РёРё РїСЂРѕРјРѕРєРѕРґР° Р·Р° РІР°С€РёРј Р°РєРєР°СѓРЅС‚РѕРј Р·Р°РєСЂРµРїР»СЏСЋС‚СЃСЏ РЅСѓР¶РЅС‹Рµ С‚РµРјР°С‚РёС‡РµСЃРєРёРµ СЂР°Р·РґРµР»С‹.</p>
+                        <p class="messenger-description">Вход в Строительный помощник AI из Telegram. После активации промокода за вашим аккаунтом закрепляются нужные тематические разделы.</p>
                     </div>
-                    <a class="messenger-qr-link" href="https://t.me/VibropressAIbot" target="_blank" rel="noopener noreferrer" aria-label="РћС‚РєСЂС‹С‚СЊ РЎС‚СЂРѕРёС‚РµР»СЊРЅС‹Р№ РїРѕРјРѕС‰РЅРёРє AI РІ Telegram">
+                    <a class="messenger-qr-link" href="https://t.me/VibropressAIbot" target="_blank" rel="noopener noreferrer" aria-label="Открыть Строительный помощник AI в Telegram">
                         <img
                             class="messenger-qr"
                             src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=12&data=https%3A%2F%2Ft.me%2FVibropressAIbot"
-                            alt="QR-РєРѕРґ РґР»СЏ РїРµСЂРµС…РѕРґР° РІ Telegram-Р±РѕС‚ РЎС‚СЂРѕРёС‚РµР»СЊРЅС‹Р№ РїРѕРјРѕС‰РЅРёРє AI"
+                            alt="QR-код для перехода в Telegram-бот Строительный помощник AI"
                             loading="lazy"
                         >
                     </a>
-                    <a class="messenger-action" href="https://t.me/VibropressAIbot" target="_blank" rel="noopener noreferrer">РћС‚РєСЂС‹С‚СЊ РІ Telegram</a>
+                    <a class="messenger-action" href="https://t.me/VibropressAIbot" target="_blank" rel="noopener noreferrer">Открыть в Telegram</a>
                 </article>
 
                 <article class="messenger-card">
                     <div class="messenger-card-top">
                         <span class="messenger-badge messenger-badge-max">MAX</span>
                         <h3 class="messenger-title">@VIBROPRESSAIBOT</h3>
-                        <p class="messenger-description">Р’С…РѕРґ РІ РЎС‚СЂРѕРёС‚РµР»СЊРЅС‹Р№ РїРѕРјРѕС‰РЅРёРє AI РёР· MAX. РџР°РєРµС‚С‹ РґРѕСЃС‚СѓРїР° Р°РєС‚РёРІРёСЂСѓСЋС‚СЃСЏ РїСЂРѕРјРѕРєРѕРґРѕРј Рё Р·Р°РєСЂРµРїР»СЏСЋС‚СЃСЏ Р·Р° РІР°С€РёРј MAX-Р°РєРєР°СѓРЅС‚РѕРј.</p>
+                        <p class="messenger-description">Вход в Строительный помощник AI из MAX. Пакеты доступа активируются промокодом и закрепляются за вашим MAX-аккаунтом.</p>
                     </div>
-                    <a class="messenger-qr-link" href="https://max.ru/VIBROPRESSAIBOT" target="_blank" rel="noopener noreferrer" aria-label="РћС‚РєСЂС‹С‚СЊ РЎС‚СЂРѕРёС‚РµР»СЊРЅС‹Р№ РїРѕРјРѕС‰РЅРёРє AI РІ MAX">
+                    <a class="messenger-qr-link" href="https://max.ru/VIBROPRESSAIBOT" target="_blank" rel="noopener noreferrer" aria-label="Открыть Строительный помощник AI в MAX">
                         <img
                             class="messenger-qr"
                             src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=12&data=https%3A%2F%2Fmax.ru%2FVIBROPRESSAIBOT"
-                            alt="QR-РєРѕРґ РґР»СЏ РїРµСЂРµС…РѕРґР° РІ MAX-Р±РѕС‚ РЎС‚СЂРѕРёС‚РµР»СЊРЅС‹Р№ РїРѕРјРѕС‰РЅРёРє AI"
+                            alt="QR-код для перехода в MAX-бот Строительный помощник AI"
                             loading="lazy"
                         >
                     </a>
-                    <a class="messenger-action" href="https://max.ru/VIBROPRESSAIBOT" target="_blank" rel="noopener noreferrer">РћС‚РєСЂС‹С‚СЊ РІ MAX</a>
+                    <a class="messenger-action" href="https://max.ru/VIBROPRESSAIBOT" target="_blank" rel="noopener noreferrer">Открыть в MAX</a>
                 </article>
             </div>
         </div>
@@ -269,7 +269,7 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p class="footer-text">РЎС‚СЂРѕРёС‚РµР»СЊРЅС‹Р№ РїРѕРјРѕС‰РЅРёРє AI вЂ” РµРґРёРЅР°СЏ РїР»Р°С‚С„РѕСЂРјР° СЃ РїР°РєРµС‚РЅС‹Рј РґРѕСЃС‚СѓРїРѕРј</p>
+            <p class="footer-text">Строительный помощник AI — единая платформа с пакетным доступом</p>
             <p class="footer-text">Обратная связь: <a href="https://t.me/VibropressAIbot" class="footer-link">Telegram</a></p>
         </div>
     </footer>
@@ -277,8 +277,8 @@
     <!-- Lightbox РґР»СЏ РёР·РѕР±СЂР°Р¶РµРЅРёР№ -->
     <div class="image-lightbox" id="image-lightbox">
         <div class="lightbox-content">
-            <button class="lightbox-close" onclick="closeLightbox()">Г—</button>
-            <img src="" alt="РЈРІРµР»РёС‡РµРЅРЅРѕРµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ" id="lightbox-image">
+            <button class="lightbox-close" onclick="closeLightbox()">×</button>
+            <img src="" alt="Увеличенное изображение" id="lightbox-image">
         </div>
     </div>
 
@@ -287,8 +287,8 @@
         <div class="pdf-modal-overlay" onclick="closePdfModal()"></div>
         <div class="pdf-modal-content">
             <div class="pdf-modal-header">
-                <h3 class="pdf-modal-title" id="pdf-modal-title">Р”РѕРєСѓРјРµРЅС‚</h3>
-                <button class="pdf-modal-close" onclick="closePdfModal()">Г—</button>
+                <h3 class="pdf-modal-title" id="pdf-modal-title">Документ</h3>
+                <button class="pdf-modal-close" onclick="closePdfModal()">×</button>
             </div>
             <div class="pdf-modal-body">
                 <iframe 
@@ -306,11 +306,11 @@
     <div class="chat-history-sidebar" id="chat-history-sidebar">
         <div class="chat-history-header">
             <h3>рџ“њ РСЃС‚РѕСЂРёСЏ С‡Р°С‚РѕРІ</h3>
-            <button class="chat-history-close" onclick="toggleChatHistory()">Г—</button>
+            <button class="chat-history-close" onclick="toggleChatHistory()">×</button>
         </div>
         <div class="chat-history-actions">
-            <button class="chat-action-btn primary" onclick="newChat()">рџ†• РќРѕРІС‹Р№ С‡Р°С‚</button>
-            <button class="chat-action-btn" onclick="clearHistory()">рџ—‘пёЏ РћС‡РёСЃС‚РёС‚СЊ</button>
+            <button class="chat-action-btn primary" onclick="newChat()">🆕 Новый чат</button>
+            <button class="chat-action-btn" onclick="clearHistory()">🗑️ Очистить</button>
         </div>
         <div class="chat-history-list" id="chat-history-list">
             <div class="empty-history">РСЃС‚РѕСЂРёСЏ РїСѓСЃС‚Р°</div>
@@ -318,7 +318,7 @@
     </div>
     
     <!-- History Toggle Button -->
-    <button class="chat-history-toggle" onclick="toggleChatHistory()">рџ“њ</button>
+    <button class="chat-history-toggle" onclick="toggleChatHistory()">📜</button>
 
     <!-- DOMPurify for safe HTML rendering -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js" crossorigin="anonymous"></script>
