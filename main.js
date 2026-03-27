@@ -15,6 +15,7 @@ import {
     updateExampleQuestions as updateExampleQuestionsModule,
     showTypingIndicator as showTypingIndicatorModule,
 } from "./ui.js";
+import { applyBranding } from "./branding.js";
 import {
     saveChatMessage as saveChatMessageModule,
     loadChatHistory as loadChatHistoryModule,
@@ -47,6 +48,7 @@ let lastMessageId = null;  // ID сообщения от сервера для �
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    applyBranding();
     initializeChat();
     initializeModeButtons();
     initializeInputHandlers();
