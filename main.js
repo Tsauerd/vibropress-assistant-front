@@ -15,7 +15,7 @@ import {
     updateExampleQuestions as updateExampleQuestionsModule,
     showTypingIndicator as showTypingIndicatorModule,
 } from "./ui.js";
-import { applyBranding } from "./branding.js";
+import { applyBranding } from "./brand-ui.js";
 import {
     saveChatMessage as saveChatMessageModule,
     loadChatHistory as loadChatHistoryModule,
