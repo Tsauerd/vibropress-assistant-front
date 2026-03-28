@@ -185,16 +185,25 @@ function handleRatingClick(button, messageId) {
     });
 }
 
-function finalizeImproveFeedback(container, liked) {
+function finalizeImproveFeedback(container, liked, message = '') {
     if (!container) return;
     container.querySelectorAll('.improve-feedback-btn').forEach(btn => {
         btn.disabled = true;
         btn.classList.toggle('selected', btn.dataset.liked === String(liked));
     });
-    const thanks = container.querySelector('.improve-feedback-thanks');
-    if (thanks) {
-        thanks.remove();
+    let thanks = container.querySelector('.improve-feedback-thanks');
+    if (!message) {
+        if (thanks) {
+            thanks.remove();
+        }
+        return;
     }
+    if (!thanks) {
+        thanks = document.createElement('div');
+        thanks.className = 'improve-feedback-thanks';
+        container.appendChild(thanks);
+    }
+    thanks.textContent = message;
 }
 
 async function handleImproveFeedbackClick(button, messageId, liked) {
@@ -207,8 +216,9 @@ async function handleImproveFeedbackClick(button, messageId, liked) {
     button.classList.add('selected');
 
     try {
-        await submitImproveFeedback(messageId, liked);
-        finalizeImproveFeedback(container, liked);
+        const result = await submitImproveFeedback(messageId, liked);
+        const message = result?.message || (liked ? 'Спасибо, сохранил.' : 'Спасибо, учту.');
+        finalizeImproveFeedback(container, liked, message);
     } catch (error) {
         console.error('Improve feedback save failed:', error);
         container.querySelectorAll('.improve-feedback-btn').forEach(btn => {
