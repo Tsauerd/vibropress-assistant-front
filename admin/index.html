@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="api-url" content="https://vibropress-v3-backend.onrender.com">
+  <title>Админка · Строительный Ассистент AI</title>
+  <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">Внутренняя админка</div>
+        <h1>Строительный Ассистент AI</h1>
+        <p class="subtitle">Аналитика, диалоги, промокоды, доступы и сохранённые улучшенные ответы.</p>
+      </div>
+      <div class="topbar-actions">
+        <label class="checkbox-pill">
+          <input type="checkbox" id="include-admin-toggle">
+          <span>Показывать admin-трафик</span>
+        </label>
+        <button id="reload-all" class="btn btn-primary" type="button">Обновить</button>
+        <button id="logout" class="btn btn-ghost" type="button">Выйти</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar">
+        <button class="nav-tab active" data-tab="summary">Сводка</button>
+        <button class="nav-tab" data-tab="conversations">Диалоги</button>
+        <button class="nav-tab" data-tab="promos">Промокоды</button>
+        <button class="nav-tab" data-tab="access">Доступы</button>
+        <button class="nav-tab" data-tab="approved">Approved Answers</button>
+      </aside>
+
+      <section class="content">
+        <section id="tab-summary" class="tab-panel active">
+          <div id="summary-cards" class="stat-grid"></div>
+          <div class="two-column">
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Платформы</h2>
+              </div>
+              <div id="platform-bars" class="bar-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Режимы</h2>
+              </div>
+              <div id="mode-bars" class="bar-list"></div>
+            </section>
+          </div>
+          <div class="two-column">
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Активность по дням</h2>
+              </div>
+              <div id="activity-table" class="compact-table"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Improve и approved</h2>
+              </div>
+              <div id="improve-summary" class="compact-table"></div>
+            </section>
+          </div>
+          <div class="two-column">
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Топ вопросов</h2>
+              </div>
+              <div id="top-queries" class="table-wrap"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Риски и хвосты</h2>
+              </div>
+              <div id="top-failures" class="table-wrap"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="tab-conversations" class="tab-panel">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Лента диалогов</h2>
+              <div class="inline-actions">
+                <button id="export-csv" class="btn btn-secondary" type="button">CSV export</button>
+              </div>
+            </div>
+            <form id="conversation-filters" class="filters-grid">
+              <input type="text" id="filter-query" placeholder="Поиск по вопросу или ответу">
+              <select id="filter-platform">
+                <option value="">Все платформы</option>
+                <option value="web">Сайт</option>
+                <option value="telegram">Telegram</option>
+                <option value="max">MAX</option>
+              </select>
+              <select id="filter-mode">
+                <option value="">Все режимы</option>
+                <option value="gost">ГОСТ/СП</option>
+                <option value="equipment">Оборудование</option>
+                <option value="defects">Претензии</option>
+                <option value="recipes">Рецептуры</option>
+                <option value="unknown">Unknown</option>
+              </select>
+              <select id="filter-liked">
+                <option value="">Любой рейтинг</option>
+                <option value="true">Только понравилось</option>
+                <option value="false">Только не понравилось</option>
+              </select>
+              <select id="filter-improved">
+                <option value="">Любой improve</option>
+                <option value="true">С improve</option>
+                <option value="false">Без improve</option>
+              </select>
+              <select id="filter-approved">
+                <option value="">Любой save</option>
+                <option value="true">Сохранён в approved</option>
+                <option value="false">Не сохранён</option>
+              </select>
+              <input type="date" id="filter-date-from">
+              <input type="date" id="filter-date-to">
+              <button class="btn btn-primary" type="submit">Применить</button>
+            </form>
+            <div id="conversations-table" class="table-wrap"></div>
+            <div class="pager">
+              <button id="conversations-prev" class="btn btn-ghost" type="button">Назад</button>
+              <span id="conversations-page-label">Страница 1</span>
+              <button id="conversations-next" class="btn btn-ghost" type="button">Вперёд</button>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Детали сессии</h2>
+            </div>
+            <div id="conversation-detail" class="session-detail empty-state">Выберите строку из таблицы, чтобы открыть всю ленту сессии.</div>
+          </section>
+        </section>
+
+        <section id="tab-promos" class="tab-panel">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Создать промокод</h2>
+            </div>
+            <form id="promo-create-form" class="filters-grid">
+              <input type="text" id="promo-code" placeholder="Код, например BUILD2026">
+              <input type="text" id="promo-description" placeholder="Описание">
+              <input type="text" id="promo-bundles" placeholder="Bundles через запятую, например zhbi_beton">
+              <input type="number" id="promo-max-activations" min="1" placeholder="Макс. активаций">
+              <input type="datetime-local" id="promo-expires-at">
+              <button class="btn btn-primary" type="submit">Создать</button>
+            </form>
+          </section>
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Промокоды</h2>
+            </div>
+            <div id="promo-codes-table" class="table-wrap"></div>
+          </section>
+        </section>
+
+        <section id="tab-access" class="tab-panel">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Выданные доступы</h2>
+            </div>
+            <form id="access-filters" class="filters-grid">
+              <select id="access-platform">
+                <option value="">Все платформы</option>
+                <option value="web">Сайт</option>
+                <option value="telegram">Telegram</option>
+                <option value="max">MAX</option>
+              </select>
+              <label class="checkbox-pill">
+                <input type="checkbox" id="access-only-active">
+                <span>Только активные</span>
+              </label>
+              <button class="btn btn-primary" type="submit">Обновить</button>
+            </form>
+            <div id="access-grants-table" class="table-wrap"></div>
+          </section>
+        </section>
+
+        <section id="tab-approved" class="tab-panel">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Approved Answers</h2>
+            </div>
+            <form id="approved-filters" class="filters-grid">
+              <input type="text" id="approved-query" placeholder="Поиск по вопросу или ответу">
+              <select id="approved-platform">
+                <option value="">Все платформы</option>
+                <option value="web">Сайт</option>
+                <option value="telegram">Telegram</option>
+                <option value="max">MAX</option>
+              </select>
+              <select id="approved-mode">
+                <option value="">Все режимы</option>
+                <option value="gost">ГОСТ/СП</option>
+                <option value="equipment">Оборудование</option>
+                <option value="defects">Претензии</option>
+                <option value="recipes">Рецептуры</option>
+              </select>
+              <button class="btn btn-primary" type="submit">Применить</button>
+            </form>
+            <div id="approved-table" class="table-wrap"></div>
+          </section>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div id="login-overlay" class="overlay">
+    <form id="login-form" class="login-card">
+      <div class="eyebrow">Доступ только для администратора</div>
+      <h2>Вход в админку</h2>
+      <p>Введите <code>ADMIN_API_TOKEN</code>. Токен будет храниться только в этой сессии браузера.</p>
+      <input id="admin-token-input" type="password" placeholder="ADMIN_API_TOKEN" autocomplete="off" required>
+      <button class="btn btn-primary" type="submit">Войти</button>
+      <div id="login-error" class="error-text"></div>
+    </form>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="./admin.js" type="module"></script>
+</body>
+</html>
