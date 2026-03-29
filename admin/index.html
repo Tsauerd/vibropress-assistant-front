@@ -192,16 +192,41 @@
                 <button id="collector-sync-neon" class="btn btn-secondary" type="button">Sync Neon</button>
               </div>
             </div>
+            <div class="helper-box">
+              <strong>Что это:</strong> здесь идёт автоматический разбор Telegram-сообщений. Система сама отсекает шум, пытается выделить полезный вопрос, строит ответ, проверяет его и только потом сохраняет в базу знаний.
+            </div>
+            <div class="helper-grid">
+              <div class="helper-card">
+                <h3>Как пользоваться</h3>
+                <ol class="helper-list">
+                  <li><strong>Collect</strong> — подтянуть новые сообщения из Telegram.</li>
+                  <li><strong>Extract</strong> — выделить из них только полезные технические вопросы.</li>
+                  <li><strong>Answer</strong> — построить ответы на найденные вопросы.</li>
+                  <li><strong>Validate</strong> — проверить, не галлюцинация ли это.</li>
+                  <li><strong>Commit</strong> — сохранить безопасные результаты в knowledge base.</li>
+                </ol>
+              </div>
+              <div class="helper-card">
+                <h3>Что значат статусы</h3>
+                <ul class="helper-list">
+                  <li><strong>noise</strong> — мусор, новость, реклама или бесполезный фрагмент.</li>
+                  <li><strong>needs_answer_generation</strong> — нормальный вопрос, можно отвечать.</li>
+                  <li><strong>validated_retry</strong> — ответ слабый, стоит перегнать ещё раз.</li>
+                  <li><strong>arbiter_required</strong> — спорный кейс, нужен ручной выбор.</li>
+                  <li><strong>committed</strong> — кейс уже завершён и записан в итоговый статус.</li>
+                </ul>
+              </div>
+            </div>
             <div class="collector-actions-grid">
-              <button id="collector-run-collect" class="btn btn-primary" type="button">Collect</button>
-              <button id="collector-run-extract" class="btn btn-secondary" type="button">Extract</button>
-              <button id="collector-run-answer" class="btn btn-secondary" type="button">Answer</button>
-              <button id="collector-run-validate" class="btn btn-secondary" type="button">Validate</button>
-              <button id="collector-run-commit" class="btn btn-secondary" type="button">Commit</button>
-              <button id="collector-run-requeue" class="btn btn-ghost" type="button">Requeue Retry</button>
+              <button id="collector-run-collect" class="btn btn-primary" type="button">1. Собрать новые сообщения</button>
+              <button id="collector-run-extract" class="btn btn-secondary" type="button">2. Выделить вопросы</button>
+              <button id="collector-run-answer" class="btn btn-secondary" type="button">3. Построить ответы</button>
+              <button id="collector-run-validate" class="btn btn-secondary" type="button">4. Проверить качество</button>
+              <button id="collector-run-commit" class="btn btn-secondary" type="button">5. Сохранить в базу</button>
+              <button id="collector-run-requeue" class="btn btn-ghost" type="button">Вернуть retry в обработку</button>
             </div>
             <form id="collector-controls" class="filters-grid">
-              <input type="number" id="collector-limit" min="1" max="5000" value="30" placeholder="Batch limit">
+              <input type="number" id="collector-limit" min="1" max="5000" value="30" placeholder="Сколько записей брать за один прогон">
               <select id="collector-candidate-status">
                 <option value="">Все статусы</option>
                 <option value="noise">noise</option>

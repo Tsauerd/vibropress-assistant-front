@@ -375,14 +375,14 @@ function collectorFilters() {
 
 function setCollectorSummary(stats) {
   const cards = [
-    ['Noise', stats.candidate_status_counts?.noise || 0],
-    ['Needs Answer', stats.candidate_status_counts?.needs_answer_generation || 0],
-    ['Retry', stats.candidate_status_counts?.validated_retry || 0],
-    ['Arbiter', stats.candidate_status_counts?.arbiter_required || 0],
-    ['Committed', stats.candidate_status_counts?.committed || 0],
-    ['Auto Verified', stats.knowledge_status_counts?.auto_verified || 0],
-    ['Auto Abstain', stats.knowledge_status_counts?.auto_abstain || 0],
-    ['Rejected Noise', stats.knowledge_status_counts?.rejected_noise || 0],
+    ['Шум отсеян', stats.candidate_status_counts?.noise || 0],
+    ['Ждут ответа', stats.candidate_status_counts?.needs_answer_generation || 0],
+    ['Нужен повтор', stats.candidate_status_counts?.validated_retry || 0],
+    ['Нужна проверка', stats.candidate_status_counts?.arbiter_required || 0],
+    ['Завершено', stats.candidate_status_counts?.committed || 0],
+    ['Сохранено в БЗ', stats.knowledge_status_counts?.auto_verified || 0],
+    ['Безопасный abstain', stats.knowledge_status_counts?.auto_abstain || 0],
+    ['Отклонено как шум', stats.knowledge_status_counts?.rejected_noise || 0],
   ];
   document.getElementById('collector-summary-cards').innerHTML = cards.map(([label, value]) => `
     <div class="stat-card">
@@ -416,14 +416,14 @@ async function loadCollector() {
     [
       { label: 'ID', render: (row) => `<strong>${escapeHtml(row.id)}</strong>` },
       { label: 'Статус', render: (row) => pill(row.candidate_status || '—', row.candidate_status === 'arbiter_required' ? 'red' : row.candidate_status === 'committed' ? 'green' : 'amber') },
-      { label: 'Тип', render: (row) => escapeHtml(row.extraction_type || '—') },
-      { label: 'Вопрос', render: (row) => `<div class="mono-snippet">${escapeHtml(row.extracted_question || row.text_clean || '—')}</div>` },
-      { label: 'Ответ/KB', render: (row) => `<div class="mono-snippet">${escapeHtml(row.knowledge_status || row.latest_validation_status || row.latest_run_type || '—')}</div>` },
+      { label: 'Тип сообщения', render: (row) => escapeHtml(row.extraction_type || '—') },
+      { label: 'Что система увидела', render: (row) => `<div class="mono-snippet">${escapeHtml(row.extracted_question || row.text_clean || '—')}</div>` },
+      { label: 'Итог', render: (row) => `<div class="mono-snippet">${escapeHtml(row.knowledge_status || row.latest_validation_status || row.latest_run_type || '—')}</div>` },
       { label: 'Действия', render: (row) => `
         <div class="row-actions">
-          ${row.candidate_status === 'arbiter_required' ? `<button class="btn btn-success" data-collector-action="approve" data-candidate-id="${escapeHtml(row.id)}">Approve</button>` : ''}
-          ${row.candidate_status === 'arbiter_required' ? `<button class="btn btn-danger" data-collector-action="reject" data-candidate-id="${escapeHtml(row.id)}">Abstain</button>` : ''}
-          ${row.candidate_status === 'arbiter_required' || row.candidate_status === 'validated_retry' ? `<button class="btn btn-ghost" data-collector-action="retry" data-candidate-id="${escapeHtml(row.id)}">Retry</button>` : ''}
+          ${row.candidate_status === 'arbiter_required' ? `<button class="btn btn-success" data-collector-action="approve" data-candidate-id="${escapeHtml(row.id)}">Одобрить</button>` : ''}
+          ${row.candidate_status === 'arbiter_required' ? `<button class="btn btn-danger" data-collector-action="reject" data-candidate-id="${escapeHtml(row.id)}">В abstain</button>` : ''}
+          ${row.candidate_status === 'arbiter_required' || row.candidate_status === 'validated_retry' ? `<button class="btn btn-ghost" data-collector-action="retry" data-candidate-id="${escapeHtml(row.id)}">Перезапустить</button>` : ''}
         </div>
       ` },
     ],
@@ -434,13 +434,13 @@ async function loadCollector() {
     [
       { label: 'ID', render: (row) => `<strong>${escapeHtml(row.candidate_id)}</strong>` },
       { label: 'Причина', render: (row) => pill(row.reason_code || '—', 'red') },
-      { label: 'Severity', render: (row) => pill(row.severity || 'medium', row.severity === 'high' ? 'red' : 'amber') },
+      { label: 'Критичность', render: (row) => pill(row.severity || 'medium', row.severity === 'high' ? 'red' : 'amber') },
       { label: 'Вопрос', render: (row) => `<div class="mono-snippet">${escapeHtml(row.extracted_question || row.text_clean || '—')}</div>` },
       { label: 'Действия', render: (row) => `
         <div class="row-actions">
-          <button class="btn btn-success" data-collector-action="approve" data-candidate-id="${escapeHtml(row.candidate_id)}">Approve</button>
-          <button class="btn btn-danger" data-collector-action="reject" data-candidate-id="${escapeHtml(row.candidate_id)}">Abstain</button>
-          <button class="btn btn-ghost" data-collector-action="retry" data-candidate-id="${escapeHtml(row.candidate_id)}">Retry</button>
+          <button class="btn btn-success" data-collector-action="approve" data-candidate-id="${escapeHtml(row.candidate_id)}">Одобрить</button>
+          <button class="btn btn-danger" data-collector-action="reject" data-candidate-id="${escapeHtml(row.candidate_id)}">В abstain</button>
+          <button class="btn btn-ghost" data-collector-action="retry" data-candidate-id="${escapeHtml(row.candidate_id)}">Перезапустить</button>
         </div>
       ` },
     ],
@@ -452,12 +452,12 @@ async function loadCollector() {
       const candidateId = Number(button.dataset.candidateId);
       const action = button.dataset.collectorAction;
       if (action === 'approve') {
-        const editedAnswer = window.prompt('Если хотите, вставьте свой финальный ответ. Можно оставить пустым для approve текущего ответа.', '') || '';
+        const editedAnswer = window.prompt('Если хотите, вставьте свой финальный ответ. Можно оставить пустым, и тогда система одобрит текущий ответ как есть.', '') || '';
         await adminFetch('/collector/review/approve', {
           method: 'POST',
           body: JSON.stringify({ candidate_id: candidateId, edited_answer: editedAnswer || null }),
         });
-        showToast(`Кандидат ${candidateId} approved.`);
+        showToast(`Кандидат ${candidateId} одобрен и сохранён.`);
         await loadCollector();
         return;
       }
@@ -466,7 +466,7 @@ async function loadCollector() {
           method: 'POST',
           body: JSON.stringify({ candidate_id: candidateId, as_abstain: true }),
         });
-        showToast(`Кандидат ${candidateId} отправлен в abstain.`);
+        showToast(`Кандидат ${candidateId} переведён в safe abstain.`);
         await loadCollector();
         return;
       }
@@ -475,7 +475,7 @@ async function loadCollector() {
           method: 'POST',
           body: JSON.stringify({ candidate_id: candidateId }),
         });
-        showToast(`Кандидат ${candidateId} возвращён в retry.`);
+        showToast(`Кандидат ${candidateId} отправлен на повторную обработку.`);
         await loadCollector();
       }
     });
@@ -644,31 +644,31 @@ function bindEvents() {
   });
   document.getElementById('collector-run-collect').addEventListener('click', async () => {
     const limit = numberInputValue('collector-limit', 30);
-    await runCollectorBatch('/collector/collect', { limit, since_last: true }, 'Collect завершён.');
+    await runCollectorBatch('/collector/collect', { limit, since_last: true }, 'Новые Telegram-сообщения собраны.');
   });
   document.getElementById('collector-run-extract').addEventListener('click', async () => {
     const limit = numberInputValue('collector-limit', 30);
-    await runCollectorBatch('/collector/extract', { limit }, 'Extract завершён.');
+    await runCollectorBatch('/collector/extract', { limit }, 'Полезные вопросы выделены из сырья.');
   });
   document.getElementById('collector-run-answer').addEventListener('click', async () => {
     const limit = numberInputValue('collector-limit', 30);
-    await runCollectorBatch('/collector/answer', { limit }, 'Answer batch завершён.');
+    await runCollectorBatch('/collector/answer', { limit }, 'Ответы на кандидатов построены.');
   });
   document.getElementById('collector-run-validate').addEventListener('click', async () => {
     const limit = numberInputValue('collector-limit', 30);
-    await runCollectorBatch('/collector/validate', { limit }, 'Validate batch завершён.');
+    await runCollectorBatch('/collector/validate', { limit }, 'Проверка качества завершена.');
   });
   document.getElementById('collector-run-commit').addEventListener('click', async () => {
     const limit = numberInputValue('collector-limit', 30);
-    await runCollectorBatch('/collector/commit', { limit }, 'Commit batch завершён.');
+    await runCollectorBatch('/collector/commit', { limit }, 'Безопасные записи сохранены в базу.');
   });
   document.getElementById('collector-run-requeue').addEventListener('click', async () => {
     const limit = numberInputValue('collector-limit', 30);
-    await runCollectorBatch('/collector/requeue', { limit }, 'Retry batch возвращён.');
+    await runCollectorBatch('/collector/requeue', { limit }, 'Кейсы retry возвращены в обработку.');
   });
   document.getElementById('collector-sync-neon').addEventListener('click', async () => {
     const limit = numberInputValue('collector-limit', 30);
-    await runCollectorBatch('/collector/sync-neon', { limit }, 'Neon sync завершён.');
+    await runCollectorBatch('/collector/sync-neon', { limit }, 'Проверенные ответы синхронизированы в Neon.');
   });
   document.getElementById('export-csv').addEventListener('click', async () => {
     await exportCsv();
