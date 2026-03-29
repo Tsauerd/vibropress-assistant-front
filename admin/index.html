@@ -31,6 +31,7 @@
         <button class="nav-tab" data-tab="conversations">Диалоги</button>
         <button class="nav-tab" data-tab="promos">Промокоды</button>
         <button class="nav-tab" data-tab="access">Доступы</button>
+        <button class="nav-tab" data-tab="collector">Collector</button>
         <button class="nav-tab" data-tab="approved">Approved Answers</button>
       </aside>
 
@@ -181,6 +182,58 @@
             </form>
             <div id="access-grants-table" class="table-wrap"></div>
           </section>
+        </section>
+
+        <section id="tab-collector" class="tab-panel">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Collector v4</h2>
+              <div class="inline-actions">
+                <button id="collector-sync-neon" class="btn btn-secondary" type="button">Sync Neon</button>
+              </div>
+            </div>
+            <div class="collector-actions-grid">
+              <button id="collector-run-collect" class="btn btn-primary" type="button">Collect</button>
+              <button id="collector-run-extract" class="btn btn-secondary" type="button">Extract</button>
+              <button id="collector-run-answer" class="btn btn-secondary" type="button">Answer</button>
+              <button id="collector-run-validate" class="btn btn-secondary" type="button">Validate</button>
+              <button id="collector-run-commit" class="btn btn-secondary" type="button">Commit</button>
+              <button id="collector-run-requeue" class="btn btn-ghost" type="button">Requeue Retry</button>
+            </div>
+            <form id="collector-controls" class="filters-grid">
+              <input type="number" id="collector-limit" min="1" max="5000" value="30" placeholder="Batch limit">
+              <select id="collector-candidate-status">
+                <option value="">Все статусы</option>
+                <option value="noise">noise</option>
+                <option value="needs_answer_generation">needs_answer_generation</option>
+                <option value="validated_retry">validated_retry</option>
+                <option value="arbiter_required">arbiter_required</option>
+                <option value="committed">committed</option>
+              </select>
+              <select id="collector-queue-status">
+                <option value="open">open queue</option>
+                <option value="resolved">resolved queue</option>
+              </select>
+              <button class="btn btn-primary" type="submit">Обновить</button>
+            </form>
+            <div id="collector-summary-cards" class="stat-grid"></div>
+          </section>
+
+          <div class="two-column collector-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Кандидаты</h2>
+              </div>
+              <div id="collector-candidates-table" class="table-wrap"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Очередь review</h2>
+              </div>
+              <div id="collector-review-table" class="table-wrap"></div>
+            </section>
+          </div>
         </section>
 
         <section id="tab-approved" class="tab-panel">

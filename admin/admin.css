@@ -404,6 +404,24 @@ input:focus, select:focus, textarea:focus {
   flex-wrap: wrap;
 }
 
+.collector-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.collector-layout {
+  align-items: start;
+}
+
+.mono-snippet {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  line-height: 1.35;
+}
+
 .toast {
   position: fixed;
   right: 24px;
