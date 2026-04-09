@@ -6,6 +6,7 @@ const state = {
   conversationsPage: 1,
   approvedPage: 1,
   currentTab: 'summary',
+  promoCodeFilter: '',
 };
 
 const els = {
@@ -16,6 +17,9 @@ const els = {
   logout: document.getElementById('logout'),
   reloadAll: document.getElementById('reload-all'),
   includeAdminToggle: document.getElementById('include-admin-toggle'),
+  promoFilterInput: document.getElementById('global-promo-filter'),
+  promoApply: document.getElementById('apply-promo-filter'),
+  promoClear: document.getElementById('clear-promo-filter'),
   toast: document.getElementById('toast'),
 };
 
@@ -97,6 +101,27 @@ function numberInputValue(id, fallback) {
   return raw;
 }
 
+function currentPromoFilter() {
+  return (state.promoCodeFilter || '').trim().toUpperCase();
+}
+
+function syncPromoFilterInputs() {
+  const value = currentPromoFilter();
+  if (els.promoFilterInput) els.promoFilterInput.value = value;
+  const conversationPromo = document.getElementById('filter-promo-code');
+  if (conversationPromo && !conversationPromo.value.trim()) conversationPromo.value = value;
+  const accessPromo = document.getElementById('access-promo-code');
+  if (accessPromo && !accessPromo.value.trim()) accessPromo.value = value;
+}
+
+async function applyPromoFilter(rawValue) {
+  state.promoCodeFilter = (rawValue || '').trim().toUpperCase();
+  state.conversationsPage = 1;
+  state.approvedPage = 1;
+  syncPromoFilterInputs();
+  await loadActiveTab();
+}
+
 function renderBarList(targetId, items, labelKey, valueKey) {
   const root = document.getElementById(targetId);
   const max = Math.max(1, ...items.map((item) => Number(item[valueKey] || 0)));
@@ -136,7 +161,10 @@ function setSummaryCards(summary) {
     ['Improve', summary.totals.improve],
     ['Approved', summary.totals.approved_answers],
     ['Likes', summary.totals.likes],
+    ['Neutral', summary.totals.neutral],
     ['Dislikes', summary.totals.dislikes],
+    ['Rated', summary.totals.rated],
+    ['Notes', summary.totals.feedback_notes],
   ];
   document.getElementById('summary-cards').innerHTML = cards.map(([label, value]) => `
     <div class="stat-card">
@@ -147,13 +175,14 @@ function setSummaryCards(summary) {
 }
 
 async function loadSummary() {
+  const promoCode = currentPromoFilter();
   const [summary, timeseries, ratings, improve, topQueries, topFailures] = await Promise.all([
-    adminFetch(`/admin/dashboard/summary?include_admin=${state.includeAdmin}`),
-    adminFetch(`/admin/dashboard/timeseries?include_admin=${state.includeAdmin}`),
-    adminFetch(`/admin/ratings?include_admin=${state.includeAdmin}`),
-    adminFetch(`/admin/improve?include_admin=${state.includeAdmin}`),
-    adminFetch(`/admin/top-queries?include_admin=${state.includeAdmin}&limit=12`),
-    adminFetch(`/admin/top-failures?include_admin=${state.includeAdmin}&limit=12`),
+    adminFetch(`/admin/dashboard/summary?${toQuery({ include_admin: state.includeAdmin, promo_code: promoCode })}`),
+    adminFetch(`/admin/dashboard/timeseries?${toQuery({ include_admin: state.includeAdmin, promo_code: promoCode })}`),
+    adminFetch(`/admin/ratings?${toQuery({ include_admin: state.includeAdmin, promo_code: promoCode })}`),
+    adminFetch(`/admin/improve?${toQuery({ include_admin: state.includeAdmin, promo_code: promoCode })}`),
+    adminFetch(`/admin/top-queries?${toQuery({ include_admin: state.includeAdmin, promo_code: promoCode, limit: 12 })}`),
+    adminFetch(`/admin/top-failures?${toQuery({ include_admin: state.includeAdmin, promo_code: promoCode, limit: 12 })}`),
   ]);
 
   setSummaryCards(summary);
@@ -189,6 +218,26 @@ async function loadSummary() {
     ],
     topFailures.items,
   );
+
+  document.getElementById('promo-breakdown').innerHTML = renderTable(
+    [
+      { label: 'РџСЂРѕРјРѕРєРѕРґ', render: (row) => `<strong>${escapeHtml(row.promo_code)}</strong>` },
+      { label: 'РџРѕР»СЊР·РѕРІР°С‚РµР»Рё', render: (row) => escapeHtml(row.users) },
+      { label: 'РЎРµСЃСЃРёРё', render: (row) => escapeHtml(row.sessions) },
+      { label: 'Р”РёР°Р»РѕРіРё', render: (row) => escapeHtml(row.conversations) },
+      { label: 'AVG', render: (row) => escapeHtml(row.average_rating) },
+      { label: 'РџР»Р°С‚С„РѕСЂРјС‹', render: (row) => escapeHtml(Object.keys(row.platforms || {}).join(', ')) },
+    ],
+    summary.promo_breakdown || [],
+  );
+
+  renderKeyValueTable('feedback-signals', [
+    { label: 'РЎ РѕС†РµРЅРєРѕР№', value: summary.feedback_signals?.rated || 0 },
+    { label: 'Р‘РµР· РѕС†РµРЅРєРё', value: summary.feedback_signals?.unrated || 0 },
+    { label: 'Р•СЃС‚СЊ РєРѕРјРјРµРЅС‚Р°СЂРёР№', value: summary.feedback_signals?.note_count || 0 },
+    { label: 'РќРµРіР°С‚РёРІ СЃ РєРѕРЅС‚РµРєСЃС‚РѕРј', value: summary.feedback_signals?.negative_with_context || 0 },
+    { label: 'РўРѕРї С‚РµРіРѕРІ', value: (summary.feedback_signals?.top_tags || []).map((item) => `${item.tag}: ${item.count}`).join(' | ') || 'вЂ”' },
+  ]);
 }
 
 function conversationFilters() {
@@ -202,6 +251,7 @@ function conversationFilters() {
     liked: likedRaw === '' ? null : likedRaw === 'true',
     improved: improvedRaw === '' ? null : improvedRaw === 'true',
     approved_saved: approvedRaw === '' ? null : approvedRaw === 'true',
+    promo_code: document.getElementById('filter-promo-code').value.trim() || currentPromoFilter(),
     date_from: document.getElementById('filter-date-from').value,
     date_to: document.getElementById('filter-date-to').value,
   };
@@ -233,6 +283,7 @@ async function loadConversations() {
     [
       { label: 'Время', render: (row) => escapeHtml(new Date(row.question_time).toLocaleString()) },
       { label: 'Платформа', render: (row) => pill(row.source_channel, 'blue') },
+      { label: 'Promo', render: (row) => row.promo_code ? pill(row.promo_code, 'green') : 'вЂ”' },
       { label: 'Mode', render: (row) => pill(row.mode, row.mode === 'unknown' ? 'amber' : 'blue') },
       { label: 'Вопрос', render: (row) => `<strong>${escapeHtml(row.user_question)}</strong>` },
       { label: 'Ответ', render: (row) => escapeHtml(String(row.assistant_answer || '').slice(0, 180)) },
@@ -245,6 +296,7 @@ async function loadConversations() {
         </div>
       ` },
       { label: 'Рейтинг', render: (row) => row.has_rating ? escapeHtml(row.rating) : '—' },
+      { label: 'Feedback', render: (row) => escapeHtml(row.feedback_note || (row.feedback_tags || []).join(', ') || 'вЂ”') },
     ],
     payload.items,
     () => 'clickable',
@@ -312,7 +364,8 @@ async function loadPromoCodes() {
 async function loadAccessGrants() {
   const platform = document.getElementById('access-platform').value;
   const onlyActive = document.getElementById('access-only-active').checked;
-  const payload = await adminFetch(`/admin/access-grants?${toQuery({ platform, only_active: onlyActive })}`);
+  const promoCode = document.getElementById('access-promo-code').value.trim() || currentPromoFilter();
+  const payload = await adminFetch(`/admin/access-grants?${toQuery({ platform, only_active: onlyActive, promo_code: promoCode })}`);
   document.getElementById('access-grants-table').innerHTML = renderTable(
     [
       { label: 'Платформа', key: 'platform' },
@@ -348,6 +401,7 @@ async function loadApprovedAnswers() {
     include_admin: state.includeAdmin,
     platform: document.getElementById('approved-platform').value,
     mode: document.getElementById('approved-mode').value,
+    promo_code: currentPromoFilter(),
     query: document.getElementById('approved-query').value.trim(),
   };
   const payload = await adminFetch(`/admin/approved-answers?${toQuery(params)}`);
@@ -355,6 +409,7 @@ async function loadApprovedAnswers() {
     [
       { label: 'Дата', render: (row) => escapeHtml(new Date(row.created_at).toLocaleString()) },
       { label: 'Платформа', render: (row) => pill(row.platform, 'blue') },
+      { label: 'Promo', render: (row) => row.promo_code ? pill(row.promo_code, 'green') : 'вЂ”' },
       { label: 'Mode', render: (row) => pill(row.mode, 'blue') },
       { label: 'Вопрос', render: (row) => `<strong>${escapeHtml(row.query_text)}</strong>` },
       { label: 'Ответ', render: (row) => escapeHtml(String(row.answer_text || '').slice(0, 220)) },
@@ -603,6 +658,24 @@ function bindEvents() {
     await loadActiveTab();
   });
 
+  els.promoApply.addEventListener('click', async () => {
+    await applyPromoFilter(els.promoFilterInput.value);
+  });
+
+  els.promoClear.addEventListener('click', async () => {
+    const conversationPromo = document.getElementById('filter-promo-code');
+    const accessPromo = document.getElementById('access-promo-code');
+    if (conversationPromo) conversationPromo.value = '';
+    if (accessPromo) accessPromo.value = '';
+    await applyPromoFilter('');
+  });
+
+  els.promoFilterInput.addEventListener('keydown', async (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    await applyPromoFilter(els.promoFilterInput.value);
+  });
+
   document.querySelectorAll('.nav-tab').forEach((button) => {
     button.addEventListener('click', async () => {
       setActiveTab(button.dataset.tab);
@@ -678,6 +751,7 @@ function bindEvents() {
 
 async function boot() {
   bindEvents();
+  syncPromoFilterInputs();
   const token = getToken();
   if (!token) {
     els.overlay.classList.remove('hidden');

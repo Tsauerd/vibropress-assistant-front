@@ -16,10 +16,13 @@
         <p class="subtitle">Аналитика, диалоги, промокоды, доступы и сохранённые улучшенные ответы.</p>
       </div>
       <div class="topbar-actions">
+        <input id="global-promo-filter" type="text" placeholder="Промокод когорты">
         <label class="checkbox-pill">
           <input type="checkbox" id="include-admin-toggle">
           <span>Показывать admin-трафик</span>
         </label>
+        <button id="apply-promo-filter" class="btn btn-secondary" type="button">Фильтр</button>
+        <button id="clear-promo-filter" class="btn btn-ghost" type="button">Сброс</button>
         <button id="reload-all" class="btn btn-primary" type="button">Обновить</button>
         <button id="logout" class="btn btn-ghost" type="button">Выйти</button>
       </div>
@@ -80,6 +83,20 @@
               <div id="top-failures" class="table-wrap"></div>
             </section>
           </div>
+          <div class="two-column">
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Когорты по промокоду</h2>
+              </div>
+              <div id="promo-breakdown" class="table-wrap"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Сигналы фидбека</h2>
+              </div>
+              <div id="feedback-signals" class="compact-table"></div>
+            </section>
+          </div>
         </section>
 
         <section id="tab-conversations" class="tab-panel">
@@ -121,6 +138,7 @@
                 <option value="true">Сохранён в approved</option>
                 <option value="false">Не сохранён</option>
               </select>
+              <input type="text" id="filter-promo-code" placeholder="Промокод">
               <input type="date" id="filter-date-from">
               <input type="date" id="filter-date-to">
               <button class="btn btn-primary" type="submit">Применить</button>
@@ -178,6 +196,7 @@
                 <input type="checkbox" id="access-only-active">
                 <span>Только активные</span>
               </label>
+              <input type="text" id="access-promo-code" placeholder="Промокод">
               <button class="btn btn-primary" type="submit">Обновить</button>
             </form>
             <div id="access-grants-table" class="table-wrap"></div>

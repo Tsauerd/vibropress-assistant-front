@@ -266,23 +266,78 @@ function resolveBrand() {
 }
 
 const brand = resolveBrand();
+const ALPHA_PUBLIC_MODES = ["gost", "equipment", "recipes"];
+
+function buildAlphaBrand(inputBrand) {
+    const brandCopy = structuredClone(inputBrand);
+    brandCopy.heroSubtitle = "Единый инженерный ИИ для строительных и производственных команд: поиск по ГОСТам и СП, оборудованию и рецептурам.";
+    brandCopy.demoSubtitle = "Один чат для alpha-доступа: нормативка, оборудование и рецептуры. Более рискованные режимы пока не входят во внешний контур.";
+    brandCopy.chatStatus = "Alpha-контур: ГОСТ/СП, оборудование, рецептуры";
+    brandCopy.initialMessageHtml = `
+        <p>Здравствуйте! Я <strong>${brandCopy.heroTitle}</strong>.</p>
+        <p>Сформулируйте вопрос одним сообщением. Во внешней alpha я отвечаю по нормативке, оборудованию и рецептурам.</p>
+        <p>Ответы стоит сверять с оригиналом документа, особенно в нормативных кейсах.</p>
+    `;
+    brandCopy.features = [
+        {
+            title: "Нормативка и стандарты",
+            description: "Поиск по ГОСТам и СП с опорой на конкретные пункты, таблицы и приложения.",
+        },
+        {
+            title: "Оборудование и линия",
+            description: "Диагностика типовых сбоев, логика поиска причин и рекомендации по проверке узлов и процессов.",
+        },
+        {
+            title: "Рецептуры и материалы",
+            description: "Сравнение составов, влияние В/Ц, песка, добавок и технологических параметров без выдуманных дозировок.",
+        },
+        {
+            title: "Проверяемый инженерный ответ",
+            description: "Короткий ответ, источники и возможность сразу отметить, если документ, пункт или числа не совпали.",
+        },
+    ];
+    brandCopy.steps = [
+        {
+            title: "Собрали инженерную базу",
+            description: "ГОСТы, СП, техдокументация и проверенные внутренние материалы собраны в один поисковый контур.",
+        },
+        {
+            title: "Задали вопрос",
+            description: "Пишите естественным языком. Система сама выбирает подходящий режим: нормативка, оборудование или рецептуры.",
+        },
+        {
+            title: "Получили ответ и источники",
+            description: "Короткий вывод, видимые источники и быстрый канал для обратной связи, если ответ неточный.",
+        },
+    ];
+    brandCopy.ctaSubtitle = "Во внешней alpha доступны ГОСТы, оборудование и рецептуры. Более рискованные режимы остаются во внутреннем контуре до дополнительной проверки.";
+    brandCopy.modes = Object.fromEntries(
+        Object.entries(brandCopy.modes || {}).filter(([key]) => ALPHA_PUBLIC_MODES.includes(key))
+    );
+    return brandCopy;
+}
+
+const alphaBrand = buildAlphaBrand(brand);
 
 export const CONFIG = {
     API_URL: resolveApiUrl(),
-    BRAND_KEY: brand.key,
-    BRAND: brand,
+    BRAND_KEY: alphaBrand.key,
+    BRAND: alphaBrand,
     CHAT_ENDPOINT: "/chat",
+    WEB_PROMO_REDEEM_ENDPOINT: "/access/web/redeem",
     IMPROVE_ENDPOINT: "/answer/improve",
     IMPROVE_FEEDBACK_ENDPOINT: "/answer/improve/feedback",
     REQUEST_TIMEOUT_MS: 60000,
     FEEDBACK_ENDPOINT: "/feedback",
-    HISTORY_STORAGE_KEY: brand.historyStorageKey,
+    HISTORY_STORAGE_KEY: alphaBrand.historyStorageKey,
+    WEB_CLIENT_ID_STORAGE_KEY: `${alphaBrand.historyStorageKey}_web_client_id`,
+    PROMO_CODE_STORAGE_KEY: `${alphaBrand.historyStorageKey}_promo_code`,
     HISTORY_MAX_MESSAGES: 30,
     HISTORY_SOURCE_TEXT_LIMIT: 200,
     HISTORY_QUOTA_DROP_COUNT: 10,
     EXAMPLE_ROTATION_HOURS: 6,
     EXAMPLE_DISPLAY_COUNT: 4,
-    modes: brand.modes,
+    modes: alphaBrand.modes,
 };
 
 CONFIG.examples = Object.values(CONFIG.modes).flatMap((mode) => mode.examples || []);

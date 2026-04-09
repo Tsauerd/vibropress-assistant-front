@@ -2,6 +2,7 @@ import { CONFIG } from "./config.js";
 import {
     sendToAPI as sendToAPIModule,
     sendFeedback,
+    redeemWebPromo as redeemWebPromoModule,
     improveAnswer as improveAnswerModule,
     sendImproveFeedback as sendImproveFeedbackModule,
 } from "./api.js";
@@ -38,6 +39,8 @@ import {
 
 let currentMode = 'auto';
 let sessionId = generateSessionId();
+let webClientId = getOrCreateWebClientId();
+let promoCode = getStoredPromoCode();
 let isLoading = false;
 let chatHistory = [];
 let messageCounter = 0;
@@ -52,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeChat();
     initializeModeButtons();
     initializeInputHandlers();
+    initializePromoControls();
     loadChatHistory();
     updateExampleQuestions();
     
@@ -119,7 +123,8 @@ async function sendToAPI(message) {
         config: CONFIG,
         message,
         sessionId: sessionId,
-        mode: null,
+        clientId: webClientId,
+        mode: currentMode,
     });
 }
 // FEEDBACK / RATING (формат из /docs)
@@ -145,6 +150,7 @@ async function submitImproveAnswer(messageId) {
         config: CONFIG,
         messageId,
         sessionId,
+        clientId: webClientId,
     });
 }
 
@@ -153,6 +159,7 @@ async function submitImproveFeedback(messageId, liked) {
         config: CONFIG,
         messageId,
         sessionId,
+        clientId: webClientId,
         liked,
     });
 }
@@ -257,6 +264,7 @@ function addBotResponse(response, userQuery) {
             lastMessageId = id;
         },
         formatMessageContent,
+        renderResponseMeta,
         renderCollapsibleSources,
         renderImages,
         renderEntities,
@@ -264,6 +272,277 @@ function addBotResponse(response, userQuery) {
         sanitizeHtml,
         bindDynamicMessageActions,
         scrollToBottom,
+    });
+}
+
+function renderResponseMeta(response = {}) {
+    const badges = [];
+    if (response?.web_search_used) {
+        badges.push('<span class="response-meta-badge response-meta-badge-web">Ответ дополнен из открытых источников</span>');
+    }
+    if (Array.isArray(response?.validation_flags) && response.validation_flags.includes('partial_answer')) {
+        badges.push('<span class="response-meta-badge">Ответ собран в безопасном сокращённом режиме</span>');
+    }
+
+    return `
+        <div class="response-meta">
+            <div class="response-meta-badges">${badges.join('')}</div>
+            <div class="response-disclaimer">
+                Ответ сформирован AI-ассистентом. Перед использованием сверьте с оригиналом документа.
+            </div>
+        </div>
+    `;
+}
+
+function ensureIssueFeedbackControls(root) {
+    root.querySelectorAll('.rating-container').forEach(container => {
+        if (container.querySelector('.issue-feedback')) return;
+        const messageId = container.querySelector('[data-message-id]')?.dataset?.messageId;
+        if (!messageId) return;
+        const block = document.createElement('div');
+        block.className = 'issue-feedback';
+        block.innerHTML = `
+            <span class="issue-feedback-label">Неточный ответ:</span>
+            <div class="issue-feedback-buttons">
+                <button class="issue-feedback-btn" data-kind="не тот документ" data-message-id="${escapeHtml(String(messageId))}">не тот документ</button>
+                <button class="issue-feedback-btn" data-kind="не тот пункт" data-message-id="${escapeHtml(String(messageId))}">не тот пункт</button>
+                <button class="issue-feedback-btn" data-kind="не те числа" data-message-id="${escapeHtml(String(messageId))}">не те числа</button>
+                <button class="issue-feedback-btn" data-kind="слишком общий" data-message-id="${escapeHtml(String(messageId))}">слишком общий</button>
+                <button class="issue-feedback-btn" data-kind="не ответил" data-message-id="${escapeHtml(String(messageId))}">не ответил</button>
+            </div>
+        `;
+        container.appendChild(block);
+    });
+}
+
+async function handleIssueFeedbackClick(button, messageId, kind) {
+    const container = button.closest('.issue-feedback');
+    if (!container) return;
+    container.querySelectorAll('.issue-feedback-btn').forEach(btn => {
+        btn.disabled = true;
+        btn.classList.remove('selected');
+    });
+    button.classList.add('selected');
+
+    try {
+        await submitRating(messageId, 0, `issue:${kind}`);
+        let thanks = container.querySelector('.issue-feedback-thanks');
+        if (!thanks) {
+            thanks = document.createElement('div');
+            thanks.className = 'issue-feedback-thanks';
+            container.appendChild(thanks);
+        }
+        thanks.textContent = 'Спасибо, зафиксировал тип ошибки.';
+    } catch (error) {
+        console.error('Issue feedback save failed:', error);
+        container.querySelectorAll('.issue-feedback-btn').forEach(btn => {
+            btn.disabled = false;
+        });
+    }
+}
+
+function safeStorageGet(key) {
+    try {
+        return localStorage.getItem(key) || '';
+    } catch (error) {
+        return '';
+    }
+}
+
+function safeStorageSet(key, value) {
+    try {
+        localStorage.setItem(key, value);
+    } catch (error) {
+        console.error('Storage write failed:', error);
+    }
+}
+
+function safeStorageRemove(key) {
+    try {
+        localStorage.removeItem(key);
+    } catch (error) {
+        console.error('Storage remove failed:', error);
+    }
+}
+
+function generateClientId() {
+    return 'web_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+}
+
+function getOrCreateWebClientId() {
+    const existing = safeStorageGet(CONFIG.WEB_CLIENT_ID_STORAGE_KEY).trim();
+    if (existing) return existing;
+    const nextValue = generateClientId();
+    safeStorageSet(CONFIG.WEB_CLIENT_ID_STORAGE_KEY, nextValue);
+    return nextValue;
+}
+
+function normalizePromoCode(value) {
+    return String(value || '').trim().toUpperCase();
+}
+
+function getStoredPromoCode() {
+    const urlPromo = normalizePromoCode(new URLSearchParams(window.location.search).get('promo'));
+    const storedPromo = normalizePromoCode(safeStorageGet(CONFIG.PROMO_CODE_STORAGE_KEY));
+    const resolvedPromo = urlPromo || storedPromo;
+    if (urlPromo) {
+        safeStorageSet(CONFIG.PROMO_CODE_STORAGE_KEY, urlPromo);
+    }
+    return resolvedPromo;
+}
+
+function setPromoStatus(message, isError = false) {
+    const status = document.getElementById('promo-status-text');
+    if (!status) return;
+    status.textContent = message;
+    status.style.color = isError ? '#b91c1c' : '';
+}
+
+async function redeemPromoCode(code) {
+    const normalizedCode = normalizePromoCode(code);
+    if (!normalizedCode) {
+        setPromoStatus('Введите промокод тестировщика.', true);
+        return;
+    }
+
+    setPromoStatus(`Проверяю промокод ${normalizedCode}...`);
+    try {
+        const result = await redeemWebPromoModule({
+            config: CONFIG,
+            clientId: webClientId,
+            sessionId,
+            code: normalizedCode,
+        });
+        if (!result?.allowed) {
+            setPromoStatus(result?.message || 'Промокод не удалось активировать.', true);
+            return;
+        }
+        promoCode = normalizedCode;
+        safeStorageSet(CONFIG.PROMO_CODE_STORAGE_KEY, promoCode);
+        const input = document.getElementById('promo-code-input');
+        if (input) input.value = promoCode;
+        setPromoStatus(result?.message || `Промокод ${promoCode} активирован.`);
+    } catch (error) {
+        console.error('Promo redeem failed:', error);
+        setPromoStatus('Не удалось активировать промокод. Попробуйте ещё раз.', true);
+    }
+}
+
+function clearPromoCode() {
+    promoCode = '';
+    safeStorageRemove(CONFIG.PROMO_CODE_STORAGE_KEY);
+    const input = document.getElementById('promo-code-input');
+    if (input) input.value = '';
+    setPromoStatus('Тестовый код очищен в браузере. Можно ввести новый.');
+}
+
+function initializePromoControls() {
+    const input = document.getElementById('promo-code-input');
+    const applyBtn = document.getElementById('promo-apply-btn');
+    const clearBtn = document.getElementById('promo-clear-btn');
+
+    if (input) {
+        input.value = promoCode;
+        input.addEventListener('input', () => {
+            input.value = normalizePromoCode(input.value);
+        });
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                redeemPromoCode(input.value);
+            }
+        });
+    }
+
+    if (applyBtn) {
+        applyBtn.addEventListener('click', () => redeemPromoCode(input?.value || ''));
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', clearPromoCode);
+    }
+
+    if (promoCode) {
+        setPromoStatus(`Текущий тестовый код: ${promoCode}. При необходимости можно заменить его.`);
+        redeemPromoCode(promoCode);
+    }
+}
+
+function ensureIssueFeedbackControls() {
+    return;
+}
+
+function feedbackTagsForRating(rating) {
+    if (rating <= 2) return ['не тот документ', 'не тот пункт', 'не те числа', 'слишком общий', 'не хватает шагов', 'не ответил на вопрос'];
+    if (rating === 3) return ['частично полезно', 'нужно короче', 'нужно подробнее', 'не хватило источников'];
+    return ['точно по делу', 'понятно объяснил', 'полезные источники', 'сэкономило время'];
+}
+
+function buildFeedbackComment({ rating, tags = [], note = '' }) {
+    return JSON.stringify({ v: 2, source: 'web_inline_rating', rating, tags, note: String(note || '').trim() });
+}
+
+function updateRatingThanks(container, message) {
+    if (!container) return;
+    let thanks = container.querySelector('.rating-thanks');
+    if (!thanks) {
+        thanks = document.createElement('span');
+        thanks.className = 'rating-thanks';
+        container.appendChild(thanks);
+    }
+    thanks.textContent = message;
+}
+
+function renderRatingFollowup(container, messageId, rating) {
+    if (!container) return;
+    const tags = feedbackTagsForRating(rating);
+    let block = container.querySelector('.rating-followup');
+    if (!block) {
+        block = document.createElement('div');
+        block.className = 'rating-followup';
+        container.appendChild(block);
+    }
+    const label = rating <= 2 ? 'Что именно было не так?' : rating === 3 ? 'Что стоит подтянуть?' : 'Что было особенно полезно?';
+    block.innerHTML = `
+        <div class="rating-followup-label">${escapeHtml(label)}</div>
+        <div class="rating-followup-tags">
+            ${tags.map((tag) => `<button type="button" class="rating-followup-tag" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`).join('')}
+        </div>
+        <textarea class="rating-followup-note" placeholder="${rating <= 2 ? 'Что ожидали увидеть? Можно коротко.' : 'Необязательно: что ещё улучшить или что особенно зашло?'}"></textarea>
+        <div class="rating-followup-actions">
+            <button type="button" class="rating-followup-save">Сохранить комментарий</button>
+            <button type="button" class="rating-followup-skip">Оставить только оценку</button>
+        </div>
+    `;
+    block.querySelectorAll('.rating-followup-tag').forEach((tagButton) => {
+        tagButton.addEventListener('click', () => tagButton.classList.toggle('selected'));
+    });
+    const saveButton = block.querySelector('.rating-followup-save');
+    const skipButton = block.querySelector('.rating-followup-skip');
+    const noteInput = block.querySelector('.rating-followup-note');
+    saveButton.addEventListener('click', async () => {
+        const selectedTags = [...block.querySelectorAll('.rating-followup-tag.selected')].map((node) => node.dataset.tag || '').filter(Boolean);
+        saveButton.disabled = true;
+        skipButton.disabled = true;
+        const ok = await submitRating(messageId, rating, buildFeedbackComment({ rating, tags: selectedTags, note: noteInput.value }));
+        updateRatingThanks(container, ok ? 'Спасибо! Комментарий сохранён.' : 'Не удалось сохранить комментарий.');
+        if (!ok) {
+            saveButton.disabled = false;
+            skipButton.disabled = false;
+        }
+    });
+    skipButton.addEventListener('click', () => updateRatingThanks(container, 'Оценка уже сохранена. Спасибо!'));
+}
+
+function handleRatingClick(button, messageId) {
+    const rating = parseInt(button.dataset.rating, 10);
+    const container = button.closest('.rating-buttons');
+    container.querySelectorAll('.rating-btn').forEach((btn) => btn.classList.remove('selected'));
+    button.classList.add('selected');
+    const ratingContainer = button.closest('.rating-container');
+    submitRating(messageId, rating, buildFeedbackComment({ rating })).then((success) => {
+        updateRatingThanks(ratingContainer, success ? `Оценка ${rating}/5 сохранена.` : 'Не удалось сохранить оценку.');
+        if (success) renderRatingFollowup(ratingContainer, messageId, rating);
     });
 }
 
@@ -530,6 +809,7 @@ function isSafeBase64(value) {
 
 function bindDynamicMessageActions(root) {
     if (!root) return;
+    ensureIssueFeedbackControls(root);
 
     root.querySelectorAll('.rating-btn[data-message-id]').forEach(button => {
         if (button.dataset.boundClick === '1') return;
@@ -597,6 +877,17 @@ function bindDynamicMessageActions(root) {
             const liked = button.dataset.liked === 'true';
             if (!messageId || button.disabled) return;
             await handleImproveFeedbackClick(button, messageId, liked);
+        });
+    });
+
+    root.querySelectorAll('.issue-feedback-btn[data-message-id]').forEach(button => {
+        if (button.dataset.boundClick === '1') return;
+        button.dataset.boundClick = '1';
+        button.addEventListener('click', async () => {
+            const messageId = button.dataset.messageId || '';
+            const kind = button.dataset.kind || '';
+            if (!messageId || !kind || button.disabled) return;
+            await handleIssueFeedbackClick(button, messageId, kind);
         });
     });
 }

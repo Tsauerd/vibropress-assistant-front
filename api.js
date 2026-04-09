@@ -1,7 +1,7 @@
 function mapModeToTaskType(mode) {
     switch ((mode || "").toLowerCase()) {
         case "defects":
-            return "complaint";
+            return "defects";
         case "equipment":
             return "equipment";
         case "recipes":
@@ -13,7 +13,7 @@ function mapModeToTaskType(mode) {
     }
 }
 
-export async function sendToAPI({ config, message, sessionId, mode }) {
+export async function sendToAPI({ config, message, sessionId, mode, clientId }) {
     const url = `${config.API_URL}${config.CHAT_ENDPOINT}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), config.REQUEST_TIMEOUT_MS);
@@ -27,6 +27,7 @@ export async function sendToAPI({ config, message, sessionId, mode }) {
         use_rag: true,
         max_results: 5,
         session_id: sessionId,
+        client_id: clientId,
     };
 
     if (resolvedTaskType) payload.task_type = resolvedTaskType;
@@ -80,16 +81,17 @@ export async function sendFeedback({ config, messageId, rating, sessionId, comme
     }
 }
 
-export async function improveAnswer({ config, messageId, sessionId }) {
-    const response = await fetch(`${config.API_URL}${config.IMPROVE_ENDPOINT}`, {
+export async function redeemWebPromo({ config, clientId, sessionId, code }) {
+    const response = await fetch(`${config.API_URL}${config.WEB_PROMO_REDEEM_ENDPOINT}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
         },
         body: JSON.stringify({
-            message_id: messageId,
+            client_id: clientId,
             session_id: sessionId,
+            code,
         }),
     });
 
@@ -101,7 +103,29 @@ export async function improveAnswer({ config, messageId, sessionId }) {
     return await response.json();
 }
 
-export async function sendImproveFeedback({ config, messageId, sessionId, liked }) {
+export async function improveAnswer({ config, messageId, sessionId, clientId }) {
+    const response = await fetch(`${config.API_URL}${config.IMPROVE_ENDPOINT}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+        },
+        body: JSON.stringify({
+            message_id: messageId,
+            session_id: sessionId,
+            client_id: clientId,
+        }),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    return await response.json();
+}
+
+export async function sendImproveFeedback({ config, messageId, sessionId, clientId, liked }) {
     const response = await fetch(`${config.API_URL}${config.IMPROVE_FEEDBACK_ENDPOINT}`, {
         method: "POST",
         headers: {
@@ -111,6 +135,7 @@ export async function sendImproveFeedback({ config, messageId, sessionId, liked 
         body: JSON.stringify({
             message_id: messageId,
             session_id: sessionId,
+            client_id: clientId,
             liked,
         }),
     });
