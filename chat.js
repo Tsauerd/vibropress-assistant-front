@@ -1,10 +1,29 @@
+function escapeHtml(text) {
+    if (text === null || text === undefined) return "";
+    const div = document.createElement("div");
+    div.textContent = String(text);
+    return div.innerHTML;
+}
+
+function getPreviewCard(response) {
+    if (response?.preview_card && typeof response.preview_card === "object") {
+        return response.preview_card;
+    }
+    if (response?.start_point && response?.trial_variants && response?.markdown) {
+        return response;
+    }
+    return null;
+}
+
 function extractAnswer(response) {
+    const previewCard = getPreviewCard(response);
     return (
         response?.answer ||
         response?.response ||
         response?.content ||
         response?.text ||
         response?.message ||
+        previewCard?.markdown ||
         JSON.stringify(response || {})
     );
 }
@@ -39,6 +58,135 @@ async function copyAnswerToClipboard(button, text) {
     } catch (error) {
         console.error("Copy failed:", error);
     }
+}
+
+function formatCardNumber(value, digits = 1) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "—";
+    return numeric.toFixed(digits);
+}
+
+function formatConfidenceLabel(value) {
+    switch (String(value || "").toLowerCase()) {
+        case "high":
+            return "Высокая уверенность";
+        case "medium":
+            return "Средняя уверенность";
+        default:
+            return "Низкая уверенность";
+    }
+}
+
+function formatConstraintStatus(value) {
+    switch (String(value || "").toLowerCase()) {
+        case "applied":
+            return "учтено";
+        case "check":
+            return "проверить";
+        default:
+            return "ориентир";
+    }
+}
+
+function renderPreviewList(items, emptyText) {
+    const rows = Array.isArray(items) ? items.filter(Boolean) : [];
+    if (!rows.length) {
+        return `<ul class="mix-preview-list"><li>${escapeHtml(emptyText)}</li></ul>`;
+    }
+    return `<ul class="mix-preview-list">${rows.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+}
+
+function renderMixDesignPreviewCard(card) {
+    if (!card || typeof card !== "object") return "";
+
+    const startPoint = card.start_point || {};
+    const constraints = Array.isArray(card.applied_constraints) ? card.applied_constraints : [];
+    const variants = Array.isArray(card.trial_variants) ? card.trial_variants : [];
+    const assumptions = Array.isArray(card.assumptions) ? card.assumptions : [];
+    const warnings = Array.isArray(card.warnings) ? card.warnings : [];
+    const nextChecks = Array.isArray(card.next_checks) ? card.next_checks : [];
+
+    return `
+        <div class="mix-preview-card">
+            <div class="mix-preview-head">
+                <div class="mix-preview-title-wrap">
+                    <div class="mix-preview-eyebrow">Mix Design Preview</div>
+                    <div class="mix-preview-title">${escapeHtml(card.title || "Стартовый состав")}</div>
+                    <p class="mix-preview-subtitle">${escapeHtml(card.subtitle || "")}</p>
+                </div>
+                <div class="mix-preview-badges">
+                    <span class="mix-preview-badge">${escapeHtml(formatConfidenceLabel(card.confidence))}</span>
+                    <span class="mix-preview-badge mix-preview-badge-muted">${escapeHtml(card.method_id || "method")}</span>
+                </div>
+            </div>
+            <div class="mix-preview-kpis">
+                <div class="mix-preview-kpi">
+                    <span class="mix-preview-kpi-label">Цемент</span>
+                    <strong>${formatCardNumber(startPoint.cement_kg)} кг/м3</strong>
+                </div>
+                <div class="mix-preview-kpi">
+                    <span class="mix-preview-kpi-label">Вода</span>
+                    <strong>${formatCardNumber(startPoint.water_kg)} кг/м3</strong>
+                </div>
+                <div class="mix-preview-kpi">
+                    <span class="mix-preview-kpi-label">Песок</span>
+                    <strong>${formatCardNumber(startPoint.sand_kg)} кг/м3</strong>
+                </div>
+                <div class="mix-preview-kpi">
+                    <span class="mix-preview-kpi-label">Щебень</span>
+                    <strong>${formatCardNumber(startPoint.aggregate_kg)} кг/м3</strong>
+                </div>
+                <div class="mix-preview-kpi mix-preview-kpi-accent">
+                    <span class="mix-preview-kpi-label">В/Ц</span>
+                    <strong>${formatCardNumber(startPoint.wc_ratio, 3)}</strong>
+                </div>
+            </div>
+            <div class="mix-preview-grid">
+                <div class="mix-preview-section">
+                    <div class="mix-preview-section-title">Ограничения</div>
+                    <div class="mix-preview-constraints">
+                        ${constraints.length ? constraints.map((item) => `
+                            <div class="mix-preview-constraint">
+                                <div class="mix-preview-constraint-row">
+                                    <strong>${escapeHtml(item.label || "Ограничение")}</strong>
+                                    <span class="mix-preview-chip mix-preview-chip-${escapeHtml(String(item.status || "note").toLowerCase())}">${escapeHtml(formatConstraintStatus(item.status))}</span>
+                                </div>
+                                <div class="mix-preview-constraint-meta">${escapeHtml(item.requested || "не задано")} · ${escapeHtml(item.applied_value || "без численного лимита")}</div>
+                            </div>
+                        `).join("") : '<p class="mix-preview-muted">Явные численные ограничения не заданы.</p>'}
+                    </div>
+                </div>
+                <div class="mix-preview-section">
+                    <div class="mix-preview-section-title">Пробные составы</div>
+                    <div class="mix-preview-variants">
+                        ${variants.length ? variants.map((item) => `
+                            <div class="mix-preview-variant">
+                                <div class="mix-preview-variant-title">${escapeHtml(item.label || "variant")}</div>
+                                <div class="mix-preview-variant-row">Ц=${formatCardNumber(item.cement_kg)} · В=${formatCardNumber(item.water_kg)} · П=${formatCardNumber(item.sand_kg)} · Щ=${formatCardNumber(item.aggregate_kg)}</div>
+                                <div class="mix-preview-variant-row mix-preview-variant-row-accent">В/Ц=${formatCardNumber(item.wc_ratio, 3)}</div>
+                            </div>
+                        `).join("") : '<p class="mix-preview-muted">Пробные варианты пока не сформированы.</p>'}
+                    </div>
+                </div>
+            </div>
+            <div class="mix-preview-grid mix-preview-grid-lists">
+                <div class="mix-preview-section">
+                    <div class="mix-preview-section-title">Допущения</div>
+                    ${renderPreviewList(assumptions, "Специальные допущения пока не зафиксированы.")}
+                </div>
+                <div class="mix-preview-section">
+                    <div class="mix-preview-section-title">Риски и ограничения</div>
+                    ${renderPreviewList(warnings, "Существенные риски пока не зафиксированы.")}
+                </div>
+            </div>
+            ${nextChecks.length ? `
+                <div class="mix-preview-footnote">
+                    <strong>Что проверить дальше:</strong>
+                    ${escapeHtml(nextChecks.slice(0, 2).join(" · "))}
+                </div>
+            ` : ""}
+        </div>
+    `;
 }
 
 export async function sendMessage({
@@ -105,6 +253,7 @@ export function addBotResponse({
     counters,
     setLastMessageId,
     formatMessageContent,
+    renderResponseMeta,
     renderCollapsibleSources,
     renderImages,
     renderEntities,
@@ -121,14 +270,29 @@ export function addBotResponse({
     messageDiv.className = "message bot-message";
     messageDiv.setAttribute("data-message-id", messageId);
 
+    const previewCard = getPreviewCard(response);
     const answer = extractAnswer(response);
-    const plainTextAnswer = toPlainText(answer);
+    const copyParts = previewCard?.markdown && previewCard.markdown !== answer
+        ? [answer, previewCard.markdown]
+        : [answer];
+    const copySource = copyParts.filter(Boolean).join("\n\n");
+    const plainTextAnswer = toPlainText(copySource);
+    const renderAnswerBlock = !(previewCard && !response?.answer && !response?.response && previewCard?.markdown === answer);
 
     let html = `
         <div class="message-avatar">🤖</div>
         <div class="message-content">
-            ${formatMessageContent(answer)}
     `;
+
+    if (renderAnswerBlock) {
+        html += formatMessageContent(answer);
+    }
+
+    if (previewCard) {
+        html += renderMixDesignPreviewCard(previewCard);
+    }
+
+    html += renderResponseMeta(response);
 
     const sources = response.sources || response.chunks || response.documents || [];
     if (sources.length > 0) {
@@ -169,4 +333,3 @@ export function addBotResponse({
         });
     }
 }
-

@@ -60,6 +60,35 @@ export async function sendToAPI({ config, message, sessionId, mode, clientId }) 
     }
 }
 
+export async function requestMixDesignPreviewDemo({ config }) {
+    const response = await fetch(`${config.API_URL}/api/v1/mix-design/preview`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+        },
+        body: JSON.stringify({
+            target_class: "B30",
+            workability_class: "P2",
+            strength_coefficient_a: 0.58,
+            frost_resistance: "F200",
+            waterproofness: "W8",
+            materials: {
+                cement: { grade: 500, activity_28d_mpa: 52 },
+                sand: { fineness_modulus: 2.1 },
+                aggregate: { max_fraction_mm: 20 },
+            },
+        }),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    return await response.json();
+}
+
 export async function sendFeedback({ config, messageId, rating, sessionId, comment = "" }) {
     const payload = {
         message_id: messageId,

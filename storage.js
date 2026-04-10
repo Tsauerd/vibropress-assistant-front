@@ -42,10 +42,17 @@ function sanitizeImages(images) {
 
 function makeResponseSnapshot(botResponse, sourceTextLimit) {
     if (!botResponse || typeof botResponse !== "object") return null;
+    const previewCard =
+        botResponse.preview_card && typeof botResponse.preview_card === "object"
+            ? { ...botResponse.preview_card }
+            : botResponse.start_point && botResponse.trial_variants && botResponse.markdown
+              ? { ...botResponse }
+              : null;
     return {
         answer: toSafeString(botResponse.answer || botResponse.response || botResponse.content || botResponse.text),
         sources: sanitizeSources(botResponse.sources || botResponse.chunks || botResponse.documents || [], sourceTextLimit),
         images: sanitizeImages(botResponse.images || []),
+        preview_card: previewCard,
     };
 }
 
@@ -56,6 +63,8 @@ function getBotText(botResponse) {
             botResponse?.response ||
             botResponse?.content ||
             botResponse?.text ||
+            botResponse?.preview_card?.markdown ||
+            botResponse?.markdown ||
             botResponse?.message ||
             "",
     );
@@ -130,4 +139,3 @@ export function clearChat(config) {
     localStorage.removeItem(config.HISTORY_STORAGE_KEY);
     return [];
 }
-

@@ -1,6 +1,7 @@
 import { CONFIG } from "./config.js";
 import {
     sendToAPI as sendToAPIModule,
+    requestMixDesignPreviewDemo as requestMixDesignPreviewDemoModule,
     sendFeedback,
     redeemWebPromo as redeemWebPromoModule,
     improveAnswer as improveAnswerModule,
@@ -56,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeModeButtons();
     initializeInputHandlers();
     initializePromoControls();
+    initializeLabPreviewToggle();
     loadChatHistory();
     updateExampleQuestions();
     
@@ -277,6 +279,9 @@ function addBotResponse(response, userQuery) {
 
 function renderResponseMeta(response = {}) {
     const badges = [];
+    if (response?.preview_card || (response?.start_point && response?.trial_variants)) {
+        badges.push('<span class="response-meta-badge">Расчётный preview состава</span>');
+    }
     if (response?.web_search_used) {
         badges.push('<span class="response-meta-badge response-meta-badge-web">Ответ дополнен из открытых источников</span>');
     }
@@ -288,7 +293,7 @@ function renderResponseMeta(response = {}) {
         <div class="response-meta">
             <div class="response-meta-badges">${badges.join('')}</div>
             <div class="response-disclaimer">
-                Ответ сформирован AI-ассистентом. Перед использованием сверьте с оригиналом документа.
+                Ответ сформирован AI-ассистентом. Для расчётной карточки обязательно подтверждайте состав пробными замесами и испытаниями.
             </div>
         </div>
     `;
@@ -755,6 +760,45 @@ function updateExampleQuestions() {
     });
 }
 
+async function requestMixDesignPreviewDemo() {
+    if (isLoading) return;
+
+    setLoading(true);
+    const loadingId = showTypingIndicator();
+
+    try {
+        const response = await requestMixDesignPreviewDemoModule({ config: CONFIG });
+        removeTypingIndicator(loadingId);
+        addBotResponse(response, "preview beta");
+        saveChatMessage("preview beta", response);
+    } catch (error) {
+        console.error("Preview demo error:", error);
+        removeTypingIndicator(loadingId);
+        addMessageToUI("bot", `Не удалось загрузить preview калькулятора: ${error.message}`);
+    } finally {
+        setLoading(false);
+    }
+}
+
+function initializeLabPreviewToggle() {
+    const toggle = document.getElementById('mix-preview-toggle');
+    if (!toggle) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const hasLabParam = params.get('lab') === '1';
+    const storedLabAccess = safeStorageGet('mix_design_lab_access') === '1';
+    const enabled = hasLabParam || storedLabAccess;
+
+    if (hasLabParam) {
+        safeStorageSet('mix_design_lab_access', '1');
+    }
+
+    if (enabled) {
+        toggle.hidden = false;
+        toggle.addEventListener('click', () => requestMixDesignPreviewDemo());
+    }
+}
+
 // ============================================================================
 // UTILITIES
 // ============================================================================
@@ -971,7 +1015,11 @@ function loadChatEntry(id) {
     if (!entry) return;
 
     addMessageToUI('user', entry.userMessage);
-    addMessageToUI('bot', entry.botResponse);
+    if (entry.responseSnapshot && typeof entry.responseSnapshot === 'object') {
+        addBotResponse(entry.responseSnapshot, entry.userMessage);
+    } else {
+        addMessageToUI('bot', entry.botResponse);
+    }
     toggleChatHistory();
 }
 
@@ -1179,3 +1227,4 @@ window.closePdfModal = closePdfModal;
 window.loadChatEntry = loadChatEntry;
 window.deleteChatEntry = deleteChatEntry;
 window.askQuestion = askQuestion;
+window.requestMixDesignPreviewDemo = requestMixDesignPreviewDemo;
