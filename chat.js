@@ -15,8 +15,16 @@ function getPreviewCard(response) {
     return null;
 }
 
+function getNewsCard(response) {
+    if (response?.news_card && typeof response.news_card === "object") {
+        return response.news_card;
+    }
+    return null;
+}
+
 function extractAnswer(response) {
     const previewCard = getPreviewCard(response);
+    const newsCard = getNewsCard(response);
     return (
         response?.answer ||
         response?.response ||
@@ -189,6 +197,42 @@ function renderMixDesignPreviewCard(card) {
     `;
 }
 
+function renderNewsCard(card) {
+    if (!card || typeof card !== "object") return "";
+    const tags = Array.isArray(card.topic_tags) ? card.topic_tags.filter(Boolean) : [];
+    const published = String(card.published_at || "").trim();
+    const sourceName = String(card.source_name || "").trim();
+    const sourceUrl = String(card.source_url || "").trim();
+    const newsId = Number(card.id || 0);
+    const note = String(card.translated_note || "").trim();
+
+    return `
+        <div class="news-card">
+            <div class="news-card-head">
+                <div class="news-card-eyebrow">Новости материалов и технологий</div>
+                <div class="news-card-title">${escapeHtml(card.title_ru || card.title_original || "Свежая новость")}</div>
+            </div>
+            <p class="news-card-summary">${escapeHtml(card.summary_ru_short || "")}</p>
+            ${card.why_it_matters_ru ? `
+                <div class="news-card-why">
+                    <span class="news-card-why-label">Почему это важно</span>
+                    <p>${escapeHtml(card.why_it_matters_ru)}</p>
+                </div>
+            ` : ""}
+            <div class="news-card-meta">
+                ${sourceName ? `<span class="news-card-chip">${escapeHtml(sourceName)}</span>` : ""}
+                ${published ? `<span class="news-card-chip news-card-chip-muted">${escapeHtml(new Date(published).toLocaleDateString("ru-RU"))}</span>` : ""}
+                ${tags.map((tag) => `<span class="news-card-chip news-card-chip-muted">${escapeHtml(tag)}</span>`).join("")}
+            </div>
+            ${note ? `<div class="news-card-note">${escapeHtml(note)}</div>` : ""}
+            <div class="news-card-actions">
+                <button class="news-refresh-btn" data-request-source="followup">Ещё новость</button>
+                ${sourceUrl && newsId ? `<button class="news-open-btn" data-news-id="${escapeHtml(String(newsId))}" data-source-url="${escapeHtml(sourceUrl)}">Открыть источник</button>` : ""}
+            </div>
+        </div>
+    `;
+}
+
 export async function sendMessage({
     state,
     sendToAPI,
@@ -271,13 +315,21 @@ export function addBotResponse({
     messageDiv.setAttribute("data-message-id", messageId);
 
     const previewCard = getPreviewCard(response);
+    const newsCard = getNewsCard(response);
     const answer = extractAnswer(response);
-    const copyParts = previewCard?.markdown && previewCard.markdown !== answer
-        ? [answer, previewCard.markdown]
-        : [answer];
+    const copyParts = newsCard
+        ? [
+            newsCard.title_ru || newsCard.title_original || "",
+            newsCard.summary_ru_short || "",
+            newsCard.why_it_matters_ru ? `Почему это важно: ${newsCard.why_it_matters_ru}` : "",
+            newsCard.source_url || "",
+        ]
+        : previewCard?.markdown && previewCard.markdown !== answer
+            ? [answer, previewCard.markdown]
+            : [answer];
     const copySource = copyParts.filter(Boolean).join("\n\n");
     const plainTextAnswer = toPlainText(copySource);
-    const renderAnswerBlock = !(previewCard && !response?.answer && !response?.response && previewCard?.markdown === answer);
+    const renderAnswerBlock = !(previewCard && !response?.answer && !response?.response && previewCard?.markdown === answer) && !newsCard;
 
     let html = `
         <div class="message-avatar">🤖</div>
@@ -290,6 +342,10 @@ export function addBotResponse({
 
     if (previewCard) {
         html += renderMixDesignPreviewCard(previewCard);
+    }
+
+    if (newsCard) {
+        html += renderNewsCard(newsCard);
     }
 
     html += renderResponseMeta(response);

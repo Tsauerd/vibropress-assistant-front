@@ -2,7 +2,9 @@ import { CONFIG } from "./config.js";
 import {
     sendToAPI as sendToAPIModule,
     requestMixDesignPreviewDemo as requestMixDesignPreviewDemoModule,
+    requestNews as requestNewsModule,
     sendFeedback,
+    trackNewsOpen as trackNewsOpenModule,
     redeemWebPromo as redeemWebPromoModule,
     improveAnswer as improveAnswerModule,
     sendImproveFeedback as sendImproveFeedbackModule,
@@ -57,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeModeButtons();
     initializeInputHandlers();
     initializePromoControls();
+    initializeNewsControls();
     initializeLabPreviewToggle();
     loadChatHistory();
     updateExampleQuestions();
@@ -127,6 +130,26 @@ async function sendToAPI(message) {
         sessionId: sessionId,
         clientId: webClientId,
         mode: currentMode,
+    });
+}
+
+async function requestIndustryNews(requestSource = 'manual') {
+    return requestNewsModule({
+        config: CONFIG,
+        sessionId,
+        clientId: webClientId,
+        promoCode,
+        requestSource,
+    });
+}
+
+async function trackNewsOpen(newsId) {
+    return trackNewsOpenModule({
+        config: CONFIG,
+        newsId,
+        sessionId,
+        clientId: webClientId,
+        promoCode,
     });
 }
 // FEEDBACK / RATING (формат из /docs)
@@ -278,6 +301,15 @@ function addBotResponse(response, userQuery) {
 }
 
 function renderResponseMeta(response = {}) {
+    if (String(response?.response_type || '').toLowerCase() === 'news') {
+        return `
+            <div class="response-meta">
+                <div class="response-meta-badges">
+                    <span class="response-meta-badge response-meta-badge-web">Ежедневная подборка отраслевых новостей</span>
+                </div>
+            </div>
+        `;
+    }
     const badges = [];
     if (response?.preview_card || (response?.start_point && response?.trial_variants)) {
         badges.push('<span class="response-meta-badge">Расчётный preview состава</span>');
@@ -552,6 +584,9 @@ function handleRatingClick(button, messageId) {
 }
 
 function renderRating(messageId, response = {}) {
+    if (String(response?.response_type || '').toLowerCase() === 'news' || String(response?.feedback_type || '').toLowerCase() === 'none') {
+        return '';
+    }
     const safeMessageId = escapeHtml(String(messageId));
     const improveEnabled = Boolean(response?.improve_enabled);
     const feedbackType = String(response?.feedback_type || '').toLowerCase();
@@ -792,6 +827,32 @@ async function requestMixDesignPreviewDemo() {
     }
 }
 
+async function loadIndustryNews(requestSource = 'header') {
+    if (isLoading) return;
+    setLoading(true);
+    const loadingId = showTypingIndicator();
+
+    try {
+        const response = await requestIndustryNews(requestSource);
+        removeTypingIndicator(loadingId);
+        addBotResponse(response, '');
+        saveChatMessage('Свежая новость', response);
+        scrollToBottom();
+    } catch (error) {
+        console.error('News request failed:', error);
+        removeTypingIndicator(loadingId);
+        addMessageToUI('bot', `Не удалось получить новость: ${error.message}`);
+    } finally {
+        setLoading(false);
+    }
+}
+
+function initializeNewsControls() {
+    const newsBtn = document.getElementById('news-btn');
+    if (!newsBtn) return;
+    newsBtn.addEventListener('click', () => loadIndustryNews('header'));
+}
+
 function initializeLabPreviewToggle() {
     const toggle = document.getElementById('mix-preview-toggle');
     if (!toggle) return;
@@ -843,6 +904,9 @@ function sanitizeHtml(html) {
             'data-page',
             'data-original-file-name',
             'data-image-src',
+            'data-news-id',
+            'data-source-url',
+            'data-request-source',
         ],
     });
 }
@@ -939,6 +1003,28 @@ function bindDynamicMessageActions(root) {
             const kind = button.dataset.kind || '';
             if (!messageId || !kind || button.disabled) return;
             await handleIssueFeedbackClick(button, messageId, kind);
+        });
+    });
+
+    root.querySelectorAll('.news-refresh-btn').forEach(button => {
+        if (button.dataset.boundClick === '1') return;
+        button.dataset.boundClick = '1';
+        button.addEventListener('click', () => loadIndustryNews(button.dataset.requestSource || 'followup'));
+    });
+
+    root.querySelectorAll('.news-open-btn[data-news-id][data-source-url]').forEach(button => {
+        if (button.dataset.boundClick === '1') return;
+        button.dataset.boundClick = '1';
+        button.addEventListener('click', async () => {
+            const newsId = Number(button.dataset.newsId || 0);
+            const sourceUrl = button.dataset.sourceUrl || '';
+            if (!newsId || !sourceUrl) return;
+            try {
+                await trackNewsOpen(newsId);
+            } catch (error) {
+                console.error('News open tracking failed:', error);
+            }
+            window.open(sourceUrl, '_blank', 'noopener,noreferrer');
         });
     });
 }

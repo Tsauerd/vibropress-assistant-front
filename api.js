@@ -132,6 +132,54 @@ export async function redeemWebPromo({ config, clientId, sessionId, code }) {
     return await response.json();
 }
 
+export async function requestNews({ config, sessionId, clientId, promoCode = "", requestSource = "manual" }) {
+    const response = await fetch(`${config.API_URL}${config.NEWS_ENDPOINT}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+        },
+        body: JSON.stringify({
+            platform: "web",
+            session_id: sessionId,
+            client_id: clientId,
+            promo_code: promoCode,
+            request_source: requestSource,
+        }),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    return await response.json();
+}
+
+export async function trackNewsOpen({ config, newsId, sessionId, clientId, promoCode = "" }) {
+    const response = await fetch(`${config.API_URL}${config.NEWS_OPEN_ENDPOINT}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+        },
+        body: JSON.stringify({
+            news_id: newsId,
+            platform: "web",
+            session_id: sessionId,
+            client_id: clientId,
+            promo_code: promoCode,
+        }),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    return await response.json();
+}
+
 export async function improveAnswer({ config, messageId, sessionId, clientId }) {
     const response = await fetch(`${config.API_URL}${config.IMPROVE_ENDPOINT}`, {
         method: "POST",

@@ -324,6 +324,8 @@ export const CONFIG = {
     BRAND_KEY: alphaBrand.key,
     BRAND: alphaBrand,
     CHAT_ENDPOINT: "/chat",
+    NEWS_ENDPOINT: "/news/serve",
+    NEWS_OPEN_ENDPOINT: "/news/open",
     WEB_PROMO_REDEEM_ENDPOINT: "/access/web/redeem",
     IMPROVE_ENDPOINT: "/answer/improve",
     IMPROVE_FEEDBACK_ENDPOINT: "/answer/improve/feedback",

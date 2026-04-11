@@ -174,15 +174,35 @@ function setSummaryCards(summary) {
   `).join('');
 }
 
+function setNewsCards(targetId, totals = {}) {
+  const cards = [
+    ['Клики', totals.request_clicks || 0],
+    ['Выдачи', totals.served || 0],
+    ['CTR', `${totals.ctr_click_to_served || 0}%`],
+    ['Открытия', totals.source_opens || 0],
+    ['Повторы', totals.repeat_served || 0],
+    ['Active cards', totals.active_items || 0],
+  ];
+  const root = document.getElementById(targetId);
+  if (!root) return;
+  root.innerHTML = cards.map(([label, value]) => `
+    <div class="stat-card">
+      <div class="label">${escapeHtml(label)}</div>
+      <div class="value">${escapeHtml(value)}</div>
+    </div>
+  `).join('');
+}
+
 async function loadSummary() {
   const promoCode = currentPromoFilter();
-  const [summary, timeseries, ratings, improve, topQueries, topFailures] = await Promise.all([
+  const [summary, timeseries, ratings, improve, topQueries, topFailures, newsSummary] = await Promise.all([
     adminFetch(`/admin/dashboard/summary?${toQuery({ include_admin: state.includeAdmin, promo_code: promoCode })}`),
     adminFetch(`/admin/dashboard/timeseries?${toQuery({ include_admin: state.includeAdmin, promo_code: promoCode })}`),
     adminFetch(`/admin/ratings?${toQuery({ include_admin: state.includeAdmin, promo_code: promoCode })}`),
     adminFetch(`/admin/improve?${toQuery({ include_admin: state.includeAdmin, promo_code: promoCode })}`),
     adminFetch(`/admin/top-queries?${toQuery({ include_admin: state.includeAdmin, promo_code: promoCode, limit: 12 })}`),
     adminFetch(`/admin/top-failures?${toQuery({ include_admin: state.includeAdmin, promo_code: promoCode, limit: 12 })}`),
+    adminFetch(`/admin/news/summary?${toQuery({ include_admin: state.includeAdmin, promo_code: promoCode })}`),
   ]);
 
   setSummaryCards(summary);
@@ -238,6 +258,64 @@ async function loadSummary() {
     { label: 'РќРµРіР°С‚РёРІ СЃ РєРѕРЅС‚РµРєСЃС‚РѕРј', value: summary.feedback_signals?.negative_with_context || 0 },
     { label: 'РўРѕРї С‚РµРіРѕРІ', value: (summary.feedback_signals?.top_tags || []).map((item) => `${item.tag}: ${item.count}`).join(' | ') || 'вЂ”' },
   ]);
+  setNewsCards('news-summary-cards', newsSummary.totals || {});
+  document.getElementById('news-summary-sources').innerHTML = renderTable(
+    [
+      { label: 'Источник', key: 'source_name' },
+      { label: 'Выдач', render: (row) => escapeHtml(row.count) },
+    ],
+    newsSummary.top_sources || [],
+  );
+}
+
+async function loadNews() {
+  const promoCode = currentPromoFilter();
+  const [summary, itemsPayload] = await Promise.all([
+    adminFetch(`/admin/news/summary?${toQuery({ include_admin: state.includeAdmin, promo_code: promoCode })}`),
+    adminFetch('/admin/news/items?status=active&limit=50'),
+  ]);
+
+  setNewsCards('news-admin-summary', summary.totals || {});
+  document.getElementById('news-items-table').innerHTML = renderTable(
+    [
+      { label: 'Дата', render: (row) => escapeHtml(row.published_at ? new Date(row.published_at).toLocaleDateString() : '—') },
+      { label: 'Источник', render: (row) => pill(row.source_name || row.source_domain || '—', 'blue') },
+      { label: 'Заголовок', render: (row) => `<strong>${escapeHtml(row.title_ru || row.title_original || '—')}</strong>` },
+      { label: 'Теги', render: (row) => escapeHtml((row.topic_tags || []).join(', ') || '—') },
+      { label: 'Выдано', render: (row) => escapeHtml(row.served_count) },
+      { label: 'Score', render: (row) => escapeHtml(row.score) },
+    ],
+    itemsPayload.items || [],
+  );
+
+  document.getElementById('news-deliveries-table').innerHTML = renderTable(
+    [
+      { label: 'Время', render: (row) => escapeHtml(row.created_at ? new Date(row.created_at).toLocaleString() : '—') },
+      { label: 'Платформа', render: (row) => pill(row.platform || '—', 'blue') },
+      { label: 'Promo', render: (row) => row.promo_code ? pill(row.promo_code, 'green') : '—' },
+      { label: 'Новость', render: (row) => escapeHtml(row.title_ru || '—') },
+      { label: 'Источник', render: (row) => escapeHtml(row.source_name || '—') },
+      { label: 'Повтор', render: (row) => boolTone(row.repeated, 'Да', 'Нет') },
+    ],
+    summary.recent_deliveries || [],
+  );
+
+  document.getElementById('news-top-table').innerHTML = renderTable(
+    [
+      { label: 'Новость', render: (row) => `<strong>${escapeHtml(row.title_ru || '—')}</strong>` },
+      { label: 'Источник', render: (row) => escapeHtml(row.source_name || '—') },
+      { label: 'Выдач', render: (row) => escapeHtml(row.count) },
+    ],
+    summary.top_news || [],
+  );
+
+  document.getElementById('news-promo-table').innerHTML = renderTable(
+    [
+      { label: 'Промокод', render: (row) => `<strong>${escapeHtml(row.promo_code || '—')}</strong>` },
+      { label: 'Выдач', render: (row) => escapeHtml(row.count) },
+    ],
+    summary.promo_breakdown || [],
+  );
 }
 
 function conversationFilters() {
@@ -607,6 +685,10 @@ async function loadActiveTab() {
     await loadCollector();
     return;
   }
+  if (state.currentTab === 'news') {
+    await loadNews();
+    return;
+  }
   if (state.currentTab === 'approved') {
     await loadApprovedAnswers();
   }
@@ -743,6 +825,18 @@ function bindEvents() {
     const limit = numberInputValue('collector-limit', 30);
     await runCollectorBatch('/collector/sync-neon', { limit }, 'Проверенные ответы синхронизированы в Neon.');
   });
+  const newsRefreshButton = document.getElementById('news-refresh-run');
+  if (newsRefreshButton) {
+    newsRefreshButton.addEventListener('click', async () => {
+      await adminFetch('/admin/news/refresh', {
+        method: 'POST',
+        body: JSON.stringify({ max_items: 8 }),
+      });
+      showToast('Пул новостей обновлён.');
+      await loadNews();
+      await loadSummary();
+    });
+  }
   document.getElementById('export-csv').addEventListener('click', async () => {
     await exportCsv();
     showToast('CSV выгружен.');

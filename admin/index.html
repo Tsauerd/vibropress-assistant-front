@@ -35,6 +35,7 @@
         <button class="nav-tab" data-tab="promos">Промокоды</button>
         <button class="nav-tab" data-tab="access">Доступы</button>
         <button class="nav-tab" data-tab="collector">Collector</button>
+        <button class="nav-tab" data-tab="news">РќРѕРІРѕСЃС‚Рё</button>
         <button class="nav-tab" data-tab="approved">Approved Answers</button>
       </aside>
 
@@ -95,6 +96,20 @@
                 <h2>Сигналы фидбека</h2>
               </div>
               <div id="feedback-signals" class="compact-table"></div>
+            </section>
+          </div>
+          <div class="two-column">
+            <section class="panel">
+              <div class="panel-header">
+                <h2>РќРѕРІРѕСЃС‚Рё</h2>
+              </div>
+              <div id="news-summary-cards" class="stat-grid"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <h2>РСЃС‚РѕС‡РЅРёРєРё РЅРѕРІРѕСЃС‚РµР№</h2>
+              </div>
+              <div id="news-summary-sources" class="table-wrap"></div>
             </section>
           </div>
         </section>
@@ -304,6 +319,45 @@
             </form>
             <div id="approved-table" class="table-wrap"></div>
           </section>
+        </section>
+        <section id="tab-news" class="tab-panel">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Р•Р¶РµРґРЅРµРІРЅС‹Рµ РЅРѕРІРѕСЃС‚Рё</h2>
+              <div class="inline-actions">
+                <button id="news-refresh-run" class="btn btn-primary" type="button">РћР±РЅРѕРІРёС‚СЊ РїСѓР»</button>
+              </div>
+            </div>
+            <div id="news-admin-summary" class="stat-grid"></div>
+          </section>
+          <div class="two-column">
+            <section class="panel">
+              <div class="panel-header">
+                <h2>РЎРІРµР¶РёРµ РєР°СЂС‚РѕС‡РєРё</h2>
+              </div>
+              <div id="news-items-table" class="table-wrap"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <h2>РџРѕСЃР»РµРґРЅРёРµ РІС‹РґР°С‡Рё</h2>
+              </div>
+              <div id="news-deliveries-table" class="table-wrap"></div>
+            </section>
+          </div>
+          <div class="two-column">
+            <section class="panel">
+              <div class="panel-header">
+                <h2>РўРѕРї РЅРѕРІРѕСЃС‚РµР№</h2>
+              </div>
+              <div id="news-top-table" class="table-wrap"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <h2>РџРѕ РїСЂРѕРјРѕРєРѕРґР°Рј</h2>
+              </div>
+              <div id="news-promo-table" class="table-wrap"></div>
+            </section>
+          </div>
         </section>
       </section>
     </main>
