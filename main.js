@@ -763,18 +763,26 @@ function updateExampleQuestions() {
 async function requestMixDesignPreviewDemo() {
     if (isLoading) return;
 
+    const demoSection = document.getElementById("demo");
+    if (demoSection) {
+        demoSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
     setLoading(true);
     const loadingId = showTypingIndicator();
 
     try {
         const response = await requestMixDesignPreviewDemoModule({ config: CONFIG });
         removeTypingIndicator(loadingId);
+        currentMode = "recipes";
         addBotResponse(response, "preview beta");
         saveChatMessage("preview beta", response);
+        scrollToBottom();
     } catch (error) {
         console.error("Preview demo error:", error);
         removeTypingIndicator(loadingId);
         addMessageToUI("bot", `Не удалось загрузить preview калькулятора: ${error.message}`);
+        scrollToBottom();
     } finally {
         setLoading(false);
     }
