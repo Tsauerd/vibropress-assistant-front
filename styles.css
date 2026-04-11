@@ -1116,6 +1116,9 @@ body {
     border-radius: var(--radius-lg);
     padding: 32px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 
@@ -1126,6 +1129,7 @@ body {
 
 .messenger-card-top {
     margin-bottom: 24px;
+    width: 100%;
 }
 
 .messenger-badge {
@@ -1157,6 +1161,13 @@ body {
     letter-spacing: -0.01em;
 }
 
+.messenger-handle {
+    margin-bottom: 10px;
+    color: var(--slate-500);
+    font-size: 14px;
+    font-weight: 500;
+}
+
 .messenger-description {
     font-size: 14px;
     color: var(--slate-500);
@@ -1164,13 +1175,17 @@ body {
 }
 
 .messenger-qr-link {
-    display: inline-block;
+    display: block;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
     margin-bottom: 16px;
 }
 
 .messenger-qr {
     width: 160px;
     height: 160px;
+    display: block;
     border-radius: 12px;
     border: 1px solid var(--slate-200);
     transition: box-shadow 0.2s var(--ease);
@@ -1191,6 +1206,7 @@ body {
     padding: 10px 20px;
     border: 1.5px solid var(--primary);
     border-radius: 8px;
+    margin: 0 auto;
     transition: all 0.15s var(--ease);
 }
 

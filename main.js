@@ -763,6 +763,10 @@ function updateExampleQuestions() {
 async function requestMixDesignPreviewDemo() {
     if (isLoading) return;
 
+    if (window.location.hash !== "#demo") {
+        window.location.hash = "demo";
+    }
+
     const demoSection = document.getElementById("demo");
     if (demoSection) {
         demoSection.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -800,7 +804,6 @@ function initializeLabPreviewToggle() {
     }
 
     toggle.hidden = false;
-    toggle.addEventListener('click', () => requestMixDesignPreviewDemo());
 }
 
 // ============================================================================
