@@ -786,22 +786,13 @@ function initializeLabPreviewToggle() {
 
     const params = new URLSearchParams(window.location.search);
     const hasLabParam = params.get('lab') === '1';
-    const storedLabAccess = safeStorageGet('mix_design_lab_access') === '1';
-    const previewHosts = new Set([
-        'stroy-assistant.netlify.app',
-        'www.stroy-assistant.netlify.app',
-    ]);
-    const isPreviewHost = previewHosts.has(window.location.hostname);
-    const enabled = hasLabParam || storedLabAccess || isPreviewHost;
 
     if (hasLabParam) {
         safeStorageSet('mix_design_lab_access', '1');
     }
 
-    if (enabled) {
-        toggle.hidden = false;
-        toggle.addEventListener('click', () => requestMixDesignPreviewDemo());
-    }
+    toggle.hidden = false;
+    toggle.addEventListener('click', () => requestMixDesignPreviewDemo());
 }
 
 // ============================================================================
