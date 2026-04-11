@@ -347,7 +347,14 @@
     </div>
 
     <!-- History Toggle Button -->
-    <button class="mix-preview-toggle" id="mix-preview-toggle" type="button" title="Mix design preview beta" aria-label="Открыть beta-preview калькулятора" onclick="requestMixDesignPreviewDemo(); return false;">β</button>
+    <a
+        class="mix-preview-toggle"
+        id="mix-preview-toggle"
+        href="#demo"
+        title="Mix Design Preview Beta"
+        aria-label="Открыть beta-preview калькулятора"
+        onclick="if (window.requestMixDesignPreviewDemo) { window.requestMixDesignPreviewDemo(); }"
+    >β</a>
     <button class="chat-history-toggle" onclick="toggleChatHistory()">📜</button>
 
     <!-- DOMPurify for safe HTML rendering -->
