@@ -47,7 +47,6 @@ let promoCode = getStoredPromoCode();
 let isLoading = false;
 let chatHistory = [];
 let messageCounter = 0;
-const PROMO_CODE_PATTERN = /^[A-Z0-9][A-Z0-9_-]{3,63}$/;
 let lastMessageId = null;  // ID сообщения от сервера для рейтинга
 
 // ============================================================================
@@ -72,19 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeChat() {
     const chatInput = document.getElementById('chat-input');
     if (chatInput) {
-        chatInput.placeholder = 'РЎС„РѕСЂРјСѓР»РёСЂСѓР№С‚Рµ РІРѕРїСЂРѕСЃ РёР»Рё РѕС‚РїСЂР°РІСЊС‚Рµ РїСЂРѕРјРѕРєРѕРґ...';
         chatInput.addEventListener('input', autoResizeTextarea);
-    }
-
-    const welcomeMessage = document.querySelector('#chat-messages .bot-message .message-content');
-    if (welcomeMessage) {
-        const promptNote = '<p>Р•СЃР»Рё РЅСѓР¶РЅРѕ РѕС‚РєСЂС‹С‚СЊ РґРѕСЃС‚СѓРї, РїСЂРѕСЃС‚Рѕ РѕС‚РїСЂР°РІСЊС‚Рµ РїСЂРѕРјРѕРєРѕРґ РІ С‡Р°С‚ РѕС‚РґРµР»СЊРЅС‹Рј СЃРѕРѕР±С‰РµРЅРёРµРј.</p>';
-        if (!welcomeMessage.innerHTML.includes(promptNote)) {
-            welcomeMessage.innerHTML = welcomeMessage.innerHTML.replace(
-                /<p>.*?РїСЂРѕРјРѕРєРѕРґ.*?<\/p>/,
-                promptNote,
-            );
-        }
     }
 }
 
@@ -119,14 +106,6 @@ function initializeInputHandlers() {
 // ============================================================================
 
 async function sendMessage() {
-    const chatInput = document.getElementById('chat-input');
-    const rawMessage = (chatInput?.value || '').trim();
-    const promoFromMessage = extractPromoCodeFromMessage(rawMessage);
-
-    if (promoFromMessage) {
-        return redeemPromoCodeFromChat(rawMessage, promoFromMessage);
-    }
-
     return sendMessageModule({
         state: {
             get isLoading() {
@@ -249,12 +228,7 @@ function finalizeImproveFeedback(container, liked, message = '') {
         if (thanks) {
             thanks.remove();
         }
-        return {
-            allowed: false,
-            message: 'Р’РІРµРґРёС‚Рµ РїСЂРѕРјРѕРєРѕРґ.',
-            promo_code: '',
-            packages: [],
-        };
+        return;
     }
     if (!thanks) {
         thanks = document.createElement('div');
@@ -444,23 +418,6 @@ function normalizePromoCode(value) {
     return String(value || '').trim().toUpperCase();
 }
 
-function extractPromoCodeFromMessage(message) {
-    const trimmed = String(message || '').trim();
-    if (!trimmed) return '';
-
-    const prefixedMatch = trimmed.match(/^(?:промокод|promo(?:code)?)[:\s-]+(.+)$/i);
-    const candidate = prefixedMatch ? prefixedMatch[1] : trimmed;
-    const normalizedCode = normalizePromoCode(candidate);
-
-    if (!PROMO_CODE_PATTERN.test(normalizedCode)) return '';
-    if (prefixedMatch) return normalizedCode;
-    if (/\s/.test(candidate)) return '';
-    if (normalizedCode.length < 6) return '';
-    if (!/[A-Z]/.test(normalizedCode) || !/\d/.test(normalizedCode)) return '';
-
-    return normalizedCode;
-}
-
 function getStoredPromoCode() {
     const urlPromo = normalizePromoCode(new URLSearchParams(window.location.search).get('promo'));
     const storedPromo = normalizePromoCode(safeStorageGet(CONFIG.PROMO_CODE_STORAGE_KEY));
@@ -501,13 +458,6 @@ async function redeemPromoCode(code) {
         safeStorageSet(CONFIG.PROMO_CODE_STORAGE_KEY, promoCode);
         const input = document.getElementById('promo-code-input');
         if (input) input.value = promoCode;
-        setPromoStatus(result?.message || 'Promo code activated.');
-        return {
-            ...result,
-            allowed: true,
-            promo_code: promoCode,
-            message: result?.message || `РџСЂРѕРјРѕРєРѕРґ ${promoCode} Р°РєС‚РёРІРёСЂРѕРІР°РЅ.`,
-        };
         setPromoStatus(result?.message || `Промокод ${promoCode} активирован.`);
     } catch (error) {
         console.error('Promo redeem failed:', error);
@@ -521,58 +471,6 @@ function clearPromoCode() {
     const input = document.getElementById('promo-code-input');
     if (input) input.value = '';
     setPromoStatus('Тестовый код очищен в браузере. Можно ввести новый.');
-}
-
-function formatPromoRedeemReply(result, submittedCode) {
-    const safeCode = normalizePromoCode(submittedCode);
-    const packages = Array.isArray(result?.grant?.bundle_titles) && result.grant.bundle_titles.length
-        ? result.grant.bundle_titles
-        : Array.isArray(result?.grant?.package_titles) && result.grant.package_titles.length
-          ? result.grant.package_titles
-          : Array.isArray(result?.package_titles) && result.package_titles.length
-            ? result.package_titles
-            : Array.isArray(result?.packages) && result.packages.length
-              ? result.packages
-              : [];
-
-    if (!result?.allowed) {
-        return result?.message || `Промокод ${safeCode} не удалось активировать.`;
-    }
-
-    const accessLine = packages.length
-        ? `\n\nОткрыто: ${packages.join(', ')}.`
-        : '';
-    return `${result?.message || `Промокод ${safeCode} активирован.`}${accessLine}`;
-}
-
-async function redeemPromoCodeFromChat(rawMessage, normalizedCode) {
-    if (!rawMessage || isLoading) return;
-
-    const chatInput = document.getElementById('chat-input');
-    addMessageToUI('user', rawMessage);
-    if (chatInput) {
-        chatInput.value = '';
-        autoResizeTextarea.call(chatInput);
-    }
-
-    setLoading(true);
-    const loadingId = showTypingIndicator();
-
-    try {
-        const result = await redeemPromoCode(normalizedCode);
-        const botReply = formatPromoRedeemReply(result, normalizedCode);
-        removeTypingIndicator(loadingId);
-        addMessageToUI('bot', botReply);
-        saveChatMessage(rawMessage, { answer: botReply });
-    } catch (error) {
-        console.error('Promo redeem from chat failed:', error);
-        removeTypingIndicator(loadingId);
-        const botReply = 'Не удалось активировать промокод. Попробуйте ещё раз.';
-        addMessageToUI('bot', botReply);
-        saveChatMessage(rawMessage, { answer: botReply });
-    } finally {
-        setLoading(false);
-    }
 }
 
 function initializePromoControls() {
@@ -604,78 +502,6 @@ function initializePromoControls() {
     if (promoCode) {
         setPromoStatus(`Текущий тестовый код: ${promoCode}. При необходимости можно заменить его.`);
         redeemPromoCode(promoCode);
-    }
-}
-
-function finalizeImproveFeedback(container, liked, message = '') {
-    if (!container) return;
-    container.querySelectorAll('.improve-feedback-btn').forEach(btn => {
-        btn.disabled = true;
-        btn.classList.toggle('selected', btn.dataset.liked === String(liked));
-    });
-    let thanks = container.querySelector('.improve-feedback-thanks');
-    if (!message) {
-        if (thanks) {
-            thanks.remove();
-        }
-        return;
-    }
-    if (!thanks) {
-        thanks = document.createElement('div');
-        thanks.className = 'improve-feedback-thanks';
-        container.appendChild(thanks);
-    }
-    thanks.textContent = message;
-}
-
-async function redeemPromoCode(code) {
-    const normalizedCode = normalizePromoCode(code);
-    if (!normalizedCode) {
-        setPromoStatus('Введите промокод тестировщика.', true);
-        return {
-            allowed: false,
-            message: 'Введите промокод.',
-            promo_code: '',
-            packages: [],
-        };
-    }
-
-    setPromoStatus(`Проверяю промокод ${normalizedCode}...`);
-    try {
-        const result = await redeemWebPromoModule({
-            config: CONFIG,
-            clientId: webClientId,
-            sessionId,
-            code: normalizedCode,
-        });
-
-        if (!result?.allowed) {
-            setPromoStatus(result?.message || 'Промокод не удалось активировать.', true);
-            return {
-                ...result,
-                allowed: false,
-                message: result?.message || 'Промокод не удалось активировать.',
-            };
-        }
-
-        promoCode = normalizedCode;
-        safeStorageSet(CONFIG.PROMO_CODE_STORAGE_KEY, promoCode);
-
-        const input = document.getElementById('promo-code-input');
-        if (input) input.value = promoCode;
-
-        const successMessage = result?.message || `Промокод ${promoCode} активирован.`;
-        setPromoStatus(successMessage);
-        return {
-            ...result,
-            allowed: true,
-            promo_code: promoCode,
-            message: successMessage,
-        };
-    } catch (error) {
-        console.error('Promo redeem failed:', error);
-        setPromoStatus('Не удалось активировать промокод. Попробуйте ещё раз.', true);
-        throw error;
     }
 }
 
