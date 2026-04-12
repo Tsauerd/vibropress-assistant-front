@@ -64,10 +64,38 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeLabPreviewToggle();
     loadChatHistory();
     updateExampleQuestions();
+    requestAnimationFrame(() => {
+        ensureChatComposerReady();
+    });
+    setTimeout(() => {
+        ensureChatComposerReady();
+    }, 400);
     
     console.log('✅ Строительный помощник AI initialized');
     console.log('Session:', sessionId);
 });
+
+function ensureChatComposerReady() {
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const accessStrip = document.querySelector('.chat-access-strip');
+
+    if (accessStrip) {
+        accessStrip.style.display = 'none';
+    }
+    if (chatInput) {
+        chatInput.disabled = false;
+        chatInput.readOnly = false;
+        chatInput.removeAttribute('disabled');
+        chatInput.removeAttribute('readonly');
+        chatInput.style.pointerEvents = 'auto';
+    }
+    if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.removeAttribute('disabled');
+        sendBtn.style.pointerEvents = 'auto';
+    }
+}
 
 function initializeChat() {
     const chatInput = document.getElementById('chat-input');
