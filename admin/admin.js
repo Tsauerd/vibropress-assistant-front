@@ -9,6 +9,8 @@ const state = {
   promoCodeFilter: '',
 };
 
+const knownTabs = new Set(['summary', 'conversations', 'promos', 'access', 'mixdesign', 'collector', 'news', 'approved']);
+
 const els = {
   overlay: document.getElementById('login-overlay'),
   loginForm: document.getElementById('login-form'),
@@ -39,6 +41,22 @@ function showToast(message) {
   els.toast.textContent = message;
   els.toast.classList.remove('hidden');
   window.setTimeout(() => els.toast.classList.add('hidden'), 2600);
+}
+
+async function copyText(value) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+  const area = document.createElement('textarea');
+  area.value = value;
+  area.style.position = 'fixed';
+  area.style.opacity = '0';
+  document.body.appendChild(area);
+  area.focus();
+  area.select();
+  document.execCommand('copy');
+  area.remove();
 }
 
 async function adminFetch(path, options = {}) {
@@ -664,6 +682,145 @@ async function verifyToken() {
   await adminFetch('/admin/dashboard/summary?include_admin=false');
 }
 
+function formatMixNumber(value, digits = 1) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric.toFixed(digits) : '—';
+}
+
+function renderMixDesignCard(card) {
+  const constraints = Array.isArray(card?.applied_constraints) ? card.applied_constraints : [];
+  const assumptions = Array.isArray(card?.assumptions) ? card.assumptions : [];
+  const warnings = Array.isArray(card?.warnings) ? card.warnings : [];
+  const checks = Array.isArray(card?.next_checks) ? card.next_checks : [];
+  const start = card?.start_point || {};
+
+  return `
+    <div class="mixdesign-card">
+      <div>
+        <h3 class="mixdesign-title">${escapeHtml(card?.title || 'Preview')}</h3>
+        <p class="mixdesign-subtitle">${escapeHtml(card?.subtitle || '')}</p>
+      </div>
+      <div class="mixdesign-grid">
+        <div class="mixdesign-kpi">
+          <span class="mixdesign-kpi-label">Цемент</span>
+          <div class="mixdesign-kpi-value">${formatMixNumber(start.cement_kg)} кг/м3</div>
+        </div>
+        <div class="mixdesign-kpi">
+          <span class="mixdesign-kpi-label">Вода</span>
+          <div class="mixdesign-kpi-value">${formatMixNumber(start.water_kg)} кг/м3</div>
+        </div>
+        <div class="mixdesign-kpi">
+          <span class="mixdesign-kpi-label">Песок</span>
+          <div class="mixdesign-kpi-value">${formatMixNumber(start.sand_kg)} кг/м3</div>
+        </div>
+        <div class="mixdesign-kpi">
+          <span class="mixdesign-kpi-label">Щебень</span>
+          <div class="mixdesign-kpi-value">${formatMixNumber(start.aggregate_kg)} кг/м3</div>
+        </div>
+        <div class="mixdesign-kpi">
+          <span class="mixdesign-kpi-label">В/Ц</span>
+          <div class="mixdesign-kpi-value">${formatMixNumber(start.wc_ratio, 3)}</div>
+        </div>
+        <div class="mixdesign-kpi">
+          <span class="mixdesign-kpi-label">Метод</span>
+          <div class="mixdesign-kpi-value">${escapeHtml(card?.method_id || '—')}</div>
+        </div>
+      </div>
+      <div class="mixdesign-grid">
+        <div class="mixdesign-block">
+          <span class="mixdesign-block-title">Ограничения</span>
+          <ul>${constraints.length ? constraints.map((item) => `<li><strong>${escapeHtml(item.label || 'Ограничение')}</strong>: ${escapeHtml(item.applied_value || item.requested || '—')}</li>`).join('') : '<li>Явные ограничения не заданы.</li>'}</ul>
+        </div>
+        <div class="mixdesign-block">
+          <span class="mixdesign-block-title">Что проверить дальше</span>
+          <ul>${checks.length ? checks.map((item) => `<li>${escapeHtml(item)}</li>`).join('') : '<li>Добавьте пробные замесы и контрольные испытания.</li>'}</ul>
+        </div>
+      </div>
+      <div class="mixdesign-grid">
+        <div class="mixdesign-block">
+          <span class="mixdesign-block-title">Допущения</span>
+          <ul>${assumptions.length ? assumptions.map((item) => `<li>${escapeHtml(item)}</li>`).join('') : '<li>Допущения не зафиксированы.</li>'}</ul>
+        </div>
+        <div class="mixdesign-block">
+          <span class="mixdesign-block-title">Риски</span>
+          <ul>${warnings.length ? warnings.map((item) => `<li>${escapeHtml(item)}</li>`).join('') : '<li>Существенные риски не перечислены.</li>'}</ul>
+        </div>
+      </div>
+      <div class="mixdesign-block">
+        <span class="mixdesign-block-title">Markdown preview</span>
+        <div class="mixdesign-markdown">${escapeHtml(card?.markdown || '')}</div>
+      </div>
+    </div>
+  `;
+}
+
+function collectMixDesignPayload() {
+  const targetClass = document.getElementById('mix-target-class').value;
+  const workabilityClass = document.getElementById('mix-workability').value;
+  const frostResistance = document.getElementById('mix-frost').value;
+  const waterproofness = document.getElementById('mix-waterproofness').value;
+  const payload = {
+    target_class: targetClass,
+    workability_class: workabilityClass,
+    strength_coefficient_a: Number(document.getElementById('mix-strength-a').value || 0.58),
+    water_demand_mode: document.getElementById('mix-water-mode').value || 'none',
+    materials: {
+      cement: {
+        grade: Number(document.getElementById('mix-cement-grade').value || 500),
+        activity_28d_mpa: Number(document.getElementById('mix-cement-activity').value || 52),
+      },
+      sand: {
+        fineness_modulus: Number(document.getElementById('mix-sand-fineness').value || 2.1),
+      },
+      aggregate: {
+        max_fraction_mm: Number(document.getElementById('mix-aggregate-max').value || 20),
+      },
+    },
+  };
+  if (frostResistance) payload.frost_resistance = frostResistance;
+  if (waterproofness) payload.waterproofness = waterproofness;
+  return payload;
+}
+
+async function requestMixDesignPreview(payload) {
+  const response = await fetch(`${apiBase}/api/v1/mix-design/preview`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const payloadText = await response.text();
+    throw new Error(payloadText || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+async function loadMixDesign() {
+  const directLink = document.getElementById('mixdesign-direct-link');
+  if (directLink) {
+    directLink.value = `${window.location.origin}${window.location.pathname}#mixdesign`;
+  }
+}
+
+async function runMixDesignPreview(event) {
+  event.preventDefault();
+  const status = document.getElementById('mixdesign-status');
+  const result = document.getElementById('mixdesign-result');
+  status.textContent = 'Строю preview...';
+  result.innerHTML = '';
+  try {
+    const payload = collectMixDesignPayload();
+    const card = await requestMixDesignPreview(payload);
+    status.textContent = 'Preview построен.';
+    result.innerHTML = renderMixDesignCard(card);
+  } catch (error) {
+    status.textContent = `Не удалось построить preview: ${error.message}`;
+  }
+}
+
 async function loadActiveTab() {
   if (state.currentTab === 'summary') {
     await loadSummary();
@@ -681,6 +838,10 @@ async function loadActiveTab() {
     await loadAccessGrants();
     return;
   }
+  if (state.currentTab === 'mixdesign') {
+    await loadMixDesign();
+    return;
+  }
   if (state.currentTab === 'collector') {
     await loadCollector();
     return;
@@ -696,6 +857,9 @@ async function loadActiveTab() {
 
 function setActiveTab(tab) {
   state.currentTab = tab;
+  if (knownTabs.has(tab)) {
+    history.replaceState(null, '', `#${tab}`);
+  }
   document.querySelectorAll('.nav-tab').forEach((button) => {
     button.classList.toggle('active', button.dataset.tab === tab);
   });
@@ -763,6 +927,14 @@ function bindEvents() {
       setActiveTab(button.dataset.tab);
       await loadActiveTab();
     });
+  });
+
+  document.getElementById('mixdesign-form').addEventListener('submit', runMixDesignPreview);
+  document.getElementById('mixdesign-copy-link').addEventListener('click', async () => {
+    const directLink = document.getElementById('mixdesign-direct-link');
+    if (!directLink) return;
+    await copyText(directLink.value);
+    showToast('Ссылка на Mix Design скопирована.');
   });
 
   document.getElementById('conversation-filters').addEventListener('submit', async (event) => {
@@ -846,6 +1018,10 @@ function bindEvents() {
 async function boot() {
   bindEvents();
   syncPromoFilterInputs();
+  const hashTab = (window.location.hash || '').replace('#', '').trim();
+  if (knownTabs.has(hashTab)) {
+    setActiveTab(hashTab);
+  }
   const token = getToken();
   if (!token) {
     els.overlay.classList.remove('hidden');
