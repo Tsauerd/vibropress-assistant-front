@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeChat();
     initializeModeButtons();
     initializeInputHandlers();
+    preparePromoLayout();
     initializePromoControls();
     initializeNewsControls();
     initializeLabPreviewToggle();
@@ -418,6 +419,57 @@ function normalizePromoCode(value) {
     return String(value || '').trim().toUpperCase();
 }
 
+function preparePromoLayout() {
+    const strip = document.querySelector('.chat-access-strip');
+    const headerActions = document.querySelector('.chat-header-actions');
+    const stripControls = document.querySelector('.chat-access-strip .chat-access-controls');
+    if (!strip || !headerActions || !stripControls) {
+        return;
+    }
+
+    let promoGroup = headerActions.querySelector('.chat-header-promo');
+    if (!promoGroup) {
+        promoGroup = document.createElement('div');
+        promoGroup.className = 'chat-header-promo';
+
+        const label = document.createElement('span');
+        label.className = 'chat-header-promo-label';
+        label.textContent = '\u041f\u0440\u043e\u043c\u043e\u043a\u043e\u0434';
+
+        promoGroup.appendChild(label);
+        promoGroup.appendChild(stripControls);
+        headerActions.insertBefore(promoGroup, headerActions.firstChild);
+    }
+
+    const stripTitle = document.querySelector('.chat-access-strip .chat-access-copy strong');
+    if (stripTitle) {
+        stripTitle.remove();
+    }
+
+    const input = document.getElementById('promo-code-input');
+    if (input) {
+        input.placeholder = 'Р’РІРµРґРёС‚Рµ РїСЂРѕРјРѕРєРѕРґ';
+        input.setAttribute('autocomplete', 'off');
+        input.placeholder = '\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043f\u0440\u043e\u043c\u043e\u043a\u043e\u0434';
+    }
+
+    const applyBtn = document.getElementById('promo-apply-btn');
+    if (applyBtn) {
+        applyBtn.textContent = '\u041f\u0440\u0438\u043c\u0435\u043d\u0438\u0442\u044c';
+    }
+
+    const clearBtn = document.getElementById('promo-clear-btn');
+    if (clearBtn) {
+        clearBtn.textContent = '\u0421\u0431\u0440\u043e\u0441\u0438\u0442\u044c';
+    }
+
+    const status = document.getElementById('promo-status-text');
+    if (status && !promoCode) {
+        status.textContent = '\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043f\u0440\u043e\u043c\u043e\u043a\u043e\u0434, \u0447\u0442\u043e\u0431\u044b \u043e\u0442\u043a\u0440\u044b\u0442\u044c \u0434\u043e\u0441\u0442\u0443\u043f \u043d\u0430 \u0441\u0430\u0439\u0442\u0435.';
+        status.textContent = 'Р’РІРµРґРёС‚Рµ РїСЂРѕРјРѕРєРѕРґ, С‡С‚РѕР±С‹ РѕС‚РєСЂС‹С‚СЊ РґРѕСЃС‚СѓРї РЅР° СЃР°Р№С‚Рµ.';
+    }
+}
+
 function getStoredPromoCode() {
     const urlPromo = normalizePromoCode(new URLSearchParams(window.location.search).get('promo'));
     const storedPromo = normalizePromoCode(safeStorageGet(CONFIG.PROMO_CODE_STORAGE_KEY));
@@ -432,7 +484,7 @@ function setPromoStatus(message, isError = false) {
     const status = document.getElementById('promo-status-text');
     if (!status) return;
     status.textContent = message;
-    status.style.color = isError ? '#b91c1c' : '';
+    status.classList.toggle('is-error', Boolean(isError));
 }
 
 async function redeemPromoCode(code) {
