@@ -466,6 +466,7 @@ function preparePromoLayout() {
     const status = document.getElementById('promo-status-text');
     if (status && !promoCode) {
         status.textContent = '\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043f\u0440\u043e\u043c\u043e\u043a\u043e\u0434, \u0447\u0442\u043e\u0431\u044b \u043e\u0442\u043a\u0440\u044b\u0442\u044c \u0434\u043e\u0441\u0442\u0443\u043f \u043d\u0430 \u0441\u0430\u0439\u0442\u0435.';
+        return;
         status.textContent = 'Р’РІРµРґРёС‚Рµ РїСЂРѕРјРѕРєРѕРґ, С‡С‚РѕР±С‹ РѕС‚РєСЂС‹С‚СЊ РґРѕСЃС‚СѓРї РЅР° СЃР°Р№С‚Рµ.';
     }
 }
