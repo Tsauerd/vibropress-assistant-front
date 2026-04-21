@@ -4,6 +4,7 @@ import {
     requestMixDesignPreviewDemo as requestMixDesignPreviewDemoModule,
     requestNews as requestNewsModule,
     sendFeedback,
+    sendNewsFeedback as sendNewsFeedbackModule,
     trackNewsOpen as trackNewsOpenModule,
     redeemWebPromo as redeemWebPromoModule,
     improveAnswer as improveAnswerModule,
@@ -151,6 +152,18 @@ async function trackNewsOpen(newsId) {
         sessionId,
         clientId: webClientId,
         promoCode,
+    });
+}
+
+async function submitNewsFeedback(newsId, liked, requestSource = 'inline') {
+    return sendNewsFeedbackModule({
+        config: CONFIG,
+        newsId,
+        sessionId,
+        clientId: webClientId,
+        promoCode,
+        liked,
+        requestSource,
     });
 }
 // FEEDBACK / RATING (формат из /docs)
@@ -312,6 +325,7 @@ function renderResponseMeta(response = {}) {
         `;
     }
     const badges = [];
+    const normativeFreshness = String(response?.normative_freshness?.text || '').trim();
     if (response?.preview_card || (response?.start_point && response?.trial_variants)) {
         badges.push('<span class="response-meta-badge">Расчётный preview состава</span>');
     }
@@ -325,6 +339,7 @@ function renderResponseMeta(response = {}) {
     return `
         <div class="response-meta">
             <div class="response-meta-badges">${badges.join('')}</div>
+            ${normativeFreshness ? `<div class="response-norms-note">${escapeHtml(normativeFreshness)}</div>` : ''}
             <div class="response-disclaimer">
                 Ответ сформирован AI-ассистентом. Для расчётной карточки обязательно подтверждайте состав пробными замесами и испытаниями.
             </div>
@@ -376,6 +391,39 @@ async function handleIssueFeedbackClick(button, messageId, kind) {
         container.querySelectorAll('.issue-feedback-btn').forEach(btn => {
             btn.disabled = false;
         });
+    }
+}
+
+async function handleNewsFeedbackClick(button, newsId, liked) {
+    const container = button.closest('.news-card-feedback');
+    if (!container) return;
+    const buttons = Array.from(container.querySelectorAll('.news-feedback-btn'));
+    const stateNode = container.querySelector('.news-feedback-state');
+
+    buttons.forEach((item) => {
+        item.disabled = true;
+        item.classList.remove('selected');
+    });
+    button.classList.add('selected');
+
+    try {
+        const result = await submitNewsFeedback(newsId, liked, 'card_feedback');
+        if (stateNode) {
+            stateNode.hidden = false;
+            stateNode.classList.remove('is-error');
+            stateNode.textContent = result?.message || (liked ? 'Спасибо, будем показывать больше такого.' : 'Принял, будем точнее подбирать новости.');
+        }
+    } catch (error) {
+        console.error('News feedback save failed:', error);
+        buttons.forEach((item) => {
+            item.disabled = false;
+            item.classList.remove('selected');
+        });
+        if (stateNode) {
+            stateNode.hidden = false;
+            stateNode.classList.add('is-error');
+            stateNode.textContent = 'Не удалось сохранить реакцию. Попробуйте ещё раз.';
+        }
     }
 }
 
@@ -958,6 +1006,7 @@ function sanitizeHtml(html) {
             'data-original-file-name',
             'data-image-src',
             'data-news-id',
+            'data-liked',
             'data-source-url',
             'data-request-source',
         ],
@@ -1078,6 +1127,17 @@ function bindDynamicMessageActions(root) {
                 console.error('News open tracking failed:', error);
             }
             window.open(sourceUrl, '_blank', 'noopener,noreferrer');
+        });
+    });
+
+    root.querySelectorAll('.news-feedback-btn[data-news-id][data-liked]').forEach(button => {
+        if (button.dataset.boundClick === '1') return;
+        button.dataset.boundClick = '1';
+        button.addEventListener('click', async () => {
+            const newsId = Number(button.dataset.newsId || 0);
+            const liked = button.dataset.liked === 'true';
+            if (!newsId || button.disabled) return;
+            await handleNewsFeedbackClick(button, newsId, liked);
         });
     });
 }
